@@ -1,15 +1,17 @@
-const {
+import {
+  CategoryChannel,
   Client,
   GatewayIntentBits,
+  TextChannel,
   ThreadAutoArchiveDuration,
-} = require("discord.js");
+} from "discord.js";
 
-const { Readable } = require("stream");
+import { Readable } from "stream";
 
 require("dotenv").config({ path: "./.env" });
 
-const express = require("express");
-const multer = require("multer");
+import express, { Response } from "express";
+import multer from "multer";
 
 const app = express();
 app.use(express.json());
@@ -18,7 +20,7 @@ const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Helper function to chunk buffer
-const chunkBuffer = (buffer, chunkSize) => {
+const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
   const chunks = [];
   for (let i = 0; i < buffer.length; i += chunkSize) {
     chunks.push(buffer.slice(i, i + chunkSize));
@@ -27,11 +29,14 @@ const chunkBuffer = (buffer, chunkSize) => {
 };
 
 // Function to stream file to response
-async function streamFile(fileStream, res) {
+const streamFile = async (
+  fileStream: ReadableStream<Uint8Array>,
+  res: Response
+): Promise<void> => {
   try {
     const reader = fileStream.getReader();
 
-    const pump = () =>
+    const pump = (): Promise<void> =>
       reader
         .read()
         .then(({ done, value }) => {
@@ -53,7 +58,7 @@ async function streamFile(fileStream, res) {
     console.error("Error streaming file:", error);
     res.status(500).json({ error: "Failed to stream file" });
   }
-}
+};
 
 app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
@@ -67,9 +72,9 @@ app.get("/files", async (req, res) => {
   const token = process.env.DISCORD_TOKEN;
   await client.login(token);
 
-  // Get text channel
-  const textChannelID = process.env.TEXT_CHANNEL_ID;
-  const channel = await client.channels.fetch(textChannelID);
+  // Get text channel - TODO
+  const textChannelID = process.env.TEXT_CHANNEL_ID!;
+  const channel = (await client.channels.fetch(textChannelID))! as TextChannel;
 
   // Get all threads in channel
   const activeThreads = (await channel.threads.fetchActive()).threads;
@@ -82,10 +87,10 @@ app.get("/files", async (req, res) => {
   for (const thread of allThreads.values()) {
     try {
       // Fetch the first & second message in the thread, messages fetch latest -> oldest
-      const messages = await thread.messages.fetch({ limit: 2, after: 0 });
-      const firstMessage = messages.last();
+      const messages = await thread.messages.fetch({ limit: 2 });
+      const firstMessage = messages.last()!;
 
-      const secondMessage = messages.first();
+      const secondMessage = messages.first()!;
 
       // First message is filename
       const fileName = firstMessage.content;
@@ -121,12 +126,12 @@ app.get("/download/:threadID", async (req, res) => {
   const token = process.env.DISCORD_TOKEN;
   await client.login(token);
 
-  // Get text channel
-  const textChannelID = process.env.TEXT_CHANNEL_ID;
-  const channel = await client.channels.fetch(textChannelID);
+  // Get text channel - TODO
+  const textChannelID = process.env.TEXT_CHANNEL_ID!;
+  const channel = (await client.channels.fetch(textChannelID))! as TextChannel;
 
   // Get thread
-  const thread = await channel.threads.fetch(threadID);
+  const thread = (await channel.threads.fetch(threadID))!;
 
   // Get messages with attachments
   const messages = await thread.messages.fetch();
@@ -136,14 +141,14 @@ app.get("/download/:threadID", async (req, res) => {
     if (messages.size === 2) {
       try {
         // Latest message fetched first
-        const latestMessage = messages.first();
+        const latestMessage = messages.first()!;
 
         // Oldest message will be file name
-        const fileName = messages.last().content;
+        const fileName = messages.last()!.content;
 
         if (latestMessage.attachments.size === 1) {
           const attachment = latestMessage.attachments.first();
-          const downloadURL = attachment.url;
+          const downloadURL = attachment!.url;
           if (!downloadURL) {
             return res.status(404).json({ error: "File not found" });
           }
@@ -158,14 +163,20 @@ app.get("/download/:threadID", async (req, res) => {
               );
             }
 
+            const contentType = response.headers.get("content-type");
+
             // Set appropriate headers
             res.setHeader(
               "Content-Disposition",
               `attachment; filename="${fileName}"`
             );
-            res.setHeader("Content-Type", response.headers.get("content-type"));
+            res.setHeader(
+              "Content-Type",
+              contentType ? contentType : "Unknown"
+            );
 
             // Download the file
+            if (!response.body) throw new Error("response.body is null");
             await streamFile(response.body, res);
           } catch (error) {
             console.error("Error downloading file:", error);
@@ -179,11 +190,13 @@ app.get("/download/:threadID", async (req, res) => {
       } catch (error) {
         console.error(`Error fetching messages for thread ${threadID}:`, error);
       }
-    } else {
+    }
+    // Larger than 25 MB case
+    else {
       // Oldest message will be file name
-      const fileName = messages.last().content;
+      const fileName = messages.last()!.content;
 
-      const downloadURLs = [];
+      const downloadURLs: string[] = [];
       messages.forEach((message) => {
         if (message.attachments.size > 0) {
           message.attachments.forEach((attachment) =>
@@ -218,9 +231,8 @@ app.get("/download/:threadID", async (req, res) => {
       );
       res.setHeader("Content-Type", "application/octet-stream");
 
-      // Stream the reassembled file to the client
-      const fileStream = Readable.from(responseBuffer);
-      fileStream.pipe(res);
+      // Download
+      res.end(responseBuffer);
     }
   }
 });
@@ -235,9 +247,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   const token = process.env.DISCORD_TOKEN;
   await client.login(token);
 
-  // Get text channel
-  const textChannelID = process.env.TEXT_CHANNEL_ID;
-  const channel = await client.channels.fetch(textChannelID);
+  // Get text channel - TODO
+  const textChannelID = process.env.TEXT_CHANNEL_ID!;
+  const channel = (await client.channels.fetch(textChannelID))! as TextChannel;
 
   // Setting max file sizes
   const fileBuffer = req.file.buffer;
@@ -245,7 +257,11 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   const maxChunkSize = 23 * 1024 * 1024; // 23 MB
 
   // Function to create a thread and send file chunks
-  const createThreadAndSendChunks = async (threadName, fileName, chunks) => {
+  const createThreadAndSendChunks = async (
+    threadName: string,
+    fileName: string,
+    chunks: Buffer[]
+  ) => {
     const thread = await channel.threads.create({
       name: threadName,
       autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
@@ -253,7 +269,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
 
     await thread.send(fileName);
-    await thread.send(`${req.file.size} bytes`);
+    await thread.send(`${req.file!.size} bytes`);
 
     for (let i = 0; i < chunks.length; i++) {
       console.log(`Uploading chunk ${i + 1}/${chunks.length}...`);
