@@ -11,8 +11,13 @@ require("dotenv").config({ path: "./.env" });
 import express, { Response } from "express";
 import multer from "multer";
 
+import swaggerUi from "swagger-ui-express";
+import swaggerFile from "./swagger-output.json";
+
 const app = express();
 app.use(express.json());
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
@@ -39,7 +44,7 @@ const streamFile = async (
         .read()
         .then(({ done, value }) => {
           if (done) {
-            res.end(); // Close the response stream when done
+            res.sendStatus(200).end(); // Close the response stream when done
             return;
           }
           console.log(value);
@@ -289,7 +294,7 @@ app.get("/download/:textChannelID/:threadID", async (req, res) => {
           res.setHeader("Content-Type", "application/octet-stream");
 
           // Download
-          res.end(responseBuffer);
+          res.sendStatus(200).end(responseBuffer);
         }
       }
     } else {
