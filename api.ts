@@ -22,7 +22,6 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Helper function to chunk buffer
 const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
   const chunks = [];
   for (let i = 0; i < buffer.length; i += chunkSize) {
@@ -157,6 +156,9 @@ app.get("/files/:textChannelID", async (req, res) => {
         console.error(
           `Failed to fetch messages for thread ${thread.id}: ${error}`
         );
+        res.status(500).json({
+          error: `Failed to fetch messages for thread ${thread.id}: ${error}`,
+        });
       }
     }
 
@@ -167,7 +169,7 @@ app.get("/files/:textChannelID", async (req, res) => {
   } else {
     console.error(`Channel with ID ${textChannelID} returned null`);
     res
-      .status(404)
+      .sendStatus(404)
       .json({ error: `Failed to find channel with ID: ${textChannelID}` });
   }
 });
@@ -250,6 +252,7 @@ app.get("/download/:textChannelID/:threadID", async (req, res) => {
               `Error fetching messages for thread ${threadID}:`,
               error
             );
+            res.status(500).json({ error: "Failed to download file" });
           }
         }
         // Larger than 25 MB case
