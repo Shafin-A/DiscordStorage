@@ -382,7 +382,7 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
     if (fileSize > maxChunkSize) {
       // Break into chunks and create a thread
       const chunks = chunkBuffer(fileBuffer, maxChunkSize);
-      await createThreadAndSendChunks(
+      const thread = await createThreadAndSendChunks(
         req.file.originalname.substring(0, 50),
         req.file.originalname,
         chunks
@@ -391,10 +391,11 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
       return res.json({
         message: `File uploaded successfully in ${chunks.length} chunks: ${fileSize} bytes`,
         filename: req.file.originalname,
+        id: thread.id,
       });
     } else {
       // Create a thread and send the file without chunks
-      await createThreadAndSendChunks(
+      const thread = await createThreadAndSendChunks(
         req.file.originalname.substring(0, 50),
         req.file.originalname,
         [fileBuffer]
@@ -403,6 +404,7 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
       res.json({
         message: `File uploaded successfully: ${req.file.size} bytes`,
         filename: req.file.originalname,
+        id: thread.id,
       });
     }
   } else {
