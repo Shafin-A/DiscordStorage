@@ -43,7 +43,7 @@ const streamFile = async (
         .read()
         .then(({ done, value }) => {
           if (done) {
-            res.sendStatus(200).end(); // Close the response stream when done
+            res.status(200).end(); // Close the response stream when done
             return;
           }
           console.log(value);
@@ -130,9 +130,9 @@ app.get("/folder/:folderID/files", async (req, res) => {
     for (const thread of allThreads.values()) {
       try {
         // Fetch the first & second message in the thread, messages fetch latest -> oldest
-        const messages = await thread.messages.fetch({ limit: 2 });
+        const messages = await thread.messages.fetch();
         const firstMessage = messages.last();
-        const secondMessage = messages.first();
+        const secondMessage = messages.at(messages.size - 2);
 
         // First message is filename
         const fileName = firstMessage ? firstMessage.content : "Unknown";
@@ -297,7 +297,7 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
           res.setHeader("Content-Type", "application/octet-stream");
 
           // Download
-          res.sendStatus(200).end(responseBuffer);
+          res.status(200).end(responseBuffer);
         }
       }
     } else {
