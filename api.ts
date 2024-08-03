@@ -105,10 +105,8 @@ app.post("/folder/:folderName", async (req, res) => {
   }
 });
 
-app.get("/folders", async (req, res) => {});
-
-app.get("/files/:textChannelID", async (req, res) => {
-  const textChannelID = req.params.textChannelID;
+app.get("/folder/:folderID/files", async (req, res) => {
+  const textChannelID = req.params.folderID;
 
   // Login to Discord bot
   const client = new Client({
@@ -174,9 +172,11 @@ app.get("/files/:textChannelID", async (req, res) => {
   }
 });
 
-app.get("/download/:textChannelID/:threadID", async (req, res) => {
-  const textChannelID = req.params.textChannelID;
-  const threadID = req.params.threadID;
+app.get("/folders", async (req, res) => {});
+
+app.get("/download/:folderID/:fileID", async (req, res) => {
+  const textChannelID = req.params.folderID;
+  const threadID = req.params.fileID;
 
   // Login to Discord bot
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -314,12 +314,20 @@ app.get("/download/:textChannelID/:threadID", async (req, res) => {
   }
 });
 
-app.post("/upload/:textChannelID", upload.single("file"), async (req, res) => {
+app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
+  /*
+        #swagger.consumes = ['multipart/form-data']  
+        #swagger.parameters['file'] = {
+            in: 'formData',
+            type: 'file',
+            required: 'true',
+            description: 'The file to upload',
+    } */
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const textChannelID = req.params.textChannelID;
+  const textChannelID = req.params.folderID;
 
   // Login to Discord bot
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });

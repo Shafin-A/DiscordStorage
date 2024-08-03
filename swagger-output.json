@@ -35,6 +35,30 @@
         }
       }
     },
+    "/folder/{folderID}/files": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "folderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/folders": {
       "get": {
         "description": "",
@@ -45,12 +69,18 @@
         }
       }
     },
-    "/files/{textChannelID}": {
+    "/download/{folderID}/{fileID}": {
       "get": {
         "description": "",
         "parameters": [
           {
-            "name": "textChannelID",
+            "name": "folderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fileID",
             "in": "path",
             "required": true,
             "type": "string"
@@ -69,45 +99,25 @@
         }
       }
     },
-    "/download/{textChannelID}/{threadID}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "textChannelID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "threadID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/upload/{textChannelID}": {
+    "/upload/{folderID}": {
       "post": {
         "description": "",
+        "consumes": [
+          "multipart/form-data"
+        ],
         "parameters": [
           {
-            "name": "textChannelID",
+            "name": "folderID",
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "singleFile",
+            "in": "formData",
+            "type": "file",
+            "required": true,
+            "description": "The file to upload"
           }
         ],
         "responses": {
