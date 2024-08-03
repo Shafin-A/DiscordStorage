@@ -50,8 +50,8 @@ const streamFile = async (
           res.write(value); // Write chunk to response
           return pump(); // Continue reading
         })
-        .catch((err) => {
-          console.error("Error streaming response:", err);
+        .catch((error) => {
+          console.error("Error streaming response:", error);
           res.status(500).end("Failed to download file.");
         });
 
@@ -105,7 +105,11 @@ app.post("/folder/:folderName", async (req, res) => {
   }
 });
 
-app.get("/folder/:folderID/files", async (req, res) => {
+app.delete("/folder/:folderName", async (req, res) => {});
+
+app.patch("/folder/:folderName", async (req, res) => {});
+
+app.get("/folder/:folderID", async (req, res) => {
   const textChannelID = req.params.folderID;
 
   // Login to Discord bot
@@ -127,6 +131,8 @@ app.get("/folder/:folderID/files", async (req, res) => {
 
     const files = [];
 
+    let totalFileSize = 0;
+
     for (const thread of allThreads.values()) {
       try {
         // Fetch the first & second message in the thread, messages fetch latest -> oldest
@@ -143,6 +149,8 @@ app.get("/folder/:folderID/files", async (req, res) => {
           : "Unknown";
 
         const threadID = thread.id;
+
+        totalFileSize += fileSize === "Unknown" ? 0 : parseInt(fileSize);
 
         files.push({
           [threadID]: {
@@ -161,7 +169,8 @@ app.get("/folder/:folderID/files", async (req, res) => {
     }
 
     res.json({
-      message: `Fetched all files in Channel: ${channel.name} with ID: ${textChannelID}`,
+      folderName: channel.name,
+      folderSize: totalFileSize,
       files: files,
     });
   } else {
