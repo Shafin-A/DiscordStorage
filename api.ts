@@ -140,7 +140,49 @@ app.delete("/folder/:folderID", async (req, res) => {
   }
 });
 
-app.patch("/folder/:folderID", async (req, res) => {});
+app.patch("/folder/:folderID", async (req, res) => {
+  /*
+        #swagger.parameters['newName'] = {
+            in: 'body',     
+            type: 'string',
+            required: 'true',
+            description: 'The new name for the folder',
+    } */
+  const textChannelID = req.params.folderID;
+
+  // Login to Discord bot
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
+  });
+  const token = process.env.DISCORD_TOKEN;
+  await client.login(token);
+
+  // Get text channel
+  const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
+
+  if (channel) {
+    try {
+      await channel.setName(req.body.newName);
+      res
+        .status(200)
+        .send(
+          `Channel name updated with new name: ${channel.name} and ID: ${channel.id}`
+        );
+    } catch (error) {
+      console.error(
+        `Could not update channel name: ${channel.name} with ID: ${textChannelID}`
+      );
+      res.sendStatus(500).json({
+        error: `Failed to update channel name with ID: ${textChannelID}`,
+      });
+    }
+  } else {
+    console.error(`Channel with ID ${textChannelID} returned null`);
+    res
+      .sendStatus(404)
+      .json({ error: `Failed to find channel with ID: ${textChannelID}` });
+  }
+});
 
 app.get("/folder/:folderID", async (req, res) => {
   const textChannelID = req.params.folderID;

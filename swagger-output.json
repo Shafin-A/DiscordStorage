@@ -66,11 +66,31 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "newName",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "newName": {
+                  "example": "any"
+                }
+              }
+            },
+            "required": true,
+            "description": "The new name for the folder"
           }
         ],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       },
