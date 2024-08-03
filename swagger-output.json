@@ -1,8 +1,8 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "My API",
-    "description": "Description",
+    "title": "DiscordStorage API",
+    "description": "API endpoints for using DiscordStorage",
     "version": "1.0.0"
   },
   "host": "localhost:3000",

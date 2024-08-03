@@ -2,8 +2,8 @@ import swaggerAutogen from "swagger-autogen";
 
 const doc = {
   info: {
-    title: "My API",
-    description: "Description",
+    title: "DiscordStorage API",
+    description: "API endpoints for using DiscordStorage",
   },
   host: "localhost:3000",
 };
