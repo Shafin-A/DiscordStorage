@@ -1,12 +1,10 @@
 import {
-  CategoryChannel,
+  ChannelType,
   Client,
   GatewayIntentBits,
   TextChannel,
   ThreadAutoArchiveDuration,
 } from "discord.js";
-
-import { Readable } from "stream";
 
 require("dotenv").config({ path: "./.env" });
 
@@ -63,6 +61,47 @@ const streamFile = async (
 app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
 });
+
+app.post("/folder/:folderName", async (req, res) => {
+  // Login to Discord bot
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+  });
+  const token = process.env.DISCORD_TOKEN;
+  await client.login(token);
+
+  try {
+    const guildID = process.env.GUILD_ID!;
+    const guild = client.guilds.cache.get(guildID);
+
+    if (!guild) {
+      throw new Error("Guild not found");
+    }
+
+    const folderName = req.params.folderName;
+
+    // Create text channel
+    const channel = await guild.channels.create({
+      name: folderName,
+      type: ChannelType.GuildText,
+    });
+
+    res
+      .status(201)
+      .send(`Channel created: ${channel.name} with ID: ${channel.id}`);
+  } catch (error) {
+    console.error("Error creating channel:", error);
+    if (error instanceof Error) {
+      if (error.message === "Guild not found") {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
+  }
+});
+
+app.get("/folders", async (req, res) => {});
 
 app.get("/files/:textChannelID", async (req, res) => {
   const textChannelID = req.params.textChannelID;
