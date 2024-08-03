@@ -35,7 +35,45 @@
         }
       }
     },
-    "/folder/{folderID}/files": {
+    "/folder/{folderID}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "folderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "patch": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "folderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      },
       "get": {
         "description": "",
         "parameters": [
@@ -113,7 +151,7 @@
             "type": "string"
           },
           {
-            "name": "singleFile",
+            "name": "file",
             "in": "formData",
             "type": "file",
             "required": true,

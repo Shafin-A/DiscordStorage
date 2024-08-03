@@ -105,9 +105,42 @@ app.post("/folder/:folderName", async (req, res) => {
   }
 });
 
-app.delete("/folder/:folderName", async (req, res) => {});
+app.delete("/folder/:folderID", async (req, res) => {
+  const textChannelID = req.params.folderID;
 
-app.patch("/folder/:folderName", async (req, res) => {});
+  // Login to Discord bot
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
+  });
+  const token = process.env.DISCORD_TOKEN;
+  await client.login(token);
+
+  // Get text channel
+  const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
+
+  if (channel) {
+    try {
+      await channel.delete();
+      res
+        .status(200)
+        .send(`Channel deleted: ${channel.name} with ID: ${channel.id}`);
+    } catch (error) {
+      console.error(
+        `Could not delete channel: ${channel.name} with ID: ${textChannelID}`
+      );
+      res
+        .sendStatus(500)
+        .json({ error: `Failed to delete channel with ID: ${textChannelID}` });
+    }
+  } else {
+    console.error(`Channel with ID ${textChannelID} returned null`);
+    res
+      .sendStatus(404)
+      .json({ error: `Failed to find channel with ID: ${textChannelID}` });
+  }
+});
+
+app.patch("/folder/:folderID", async (req, res) => {});
 
 app.get("/folder/:folderID", async (req, res) => {
   const textChannelID = req.params.folderID;
