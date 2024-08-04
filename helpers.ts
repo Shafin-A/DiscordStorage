@@ -16,22 +16,20 @@ export const streamFile = async (
   try {
     const reader = fileStream.getReader();
 
-    const pump = (): Promise<void> =>
-      reader
-        .read()
-        .then(({ done, value }) => {
-          if (done) {
-            res.status(200).end(); // Close the response stream when done
-            return;
-          }
-          console.log(value);
-          res.write(value); // Write chunk to response
-          return pump(); // Continue reading
-        })
-        .catch((error) => {
-          console.error("Error streaming response:", error);
-          res.status(500).end("Failed to download file.");
-        });
+    const pump = async (): Promise<void> => {
+      try {
+        const { done, value } = await reader.read();
+        if (done) {
+          res.end(); // Close the response stream when done
+          return;
+        }
+        res.write(Buffer.from(value)); // Convert Uint8Array to Buffer and write chunk to response
+        await pump(); // Continue reading
+      } catch (error) {
+        console.error("Error streaming response:", error);
+        res.status(500).end("Failed to download file.");
+      }
+    };
 
     await pump(); // Start pumping the stream
   } catch (error) {
