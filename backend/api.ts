@@ -5,7 +5,7 @@ import {
   ThreadAutoArchiveDuration,
 } from "discord.js";
 
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config({ path: "../.env" });
 
 import express from "express";
 import multer from "multer";
