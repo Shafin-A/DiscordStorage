@@ -242,6 +242,52 @@ app.get("/folders", async (_req, res) => {
   }
 });
 
+// Delete a file in a folder
+app.delete("/folder/:folderID/file/:fileID", async (req, res) => {
+  try {
+    const textChannelID = req.params.folderID;
+    const fileID = req.params.fileID;
+
+    const client = await loginDiscord([
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.MessageContent,
+    ]);
+    const token = process.env.DISCORD_TOKEN;
+    await client.login(token);
+
+    const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
+
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+
+    const thread = await channel.threads.fetch(fileID);
+
+    if (!thread) {
+      throw new Error("Thread not found");
+    }
+
+    // Delete the thread
+    await thread.delete();
+
+    res
+      .status(200)
+      .send(`Thread deleted: ${thread.name} with ID: ${thread.id}`);
+  } catch (error) {
+    console.error("Error deleting thread:", error);
+    if (error instanceof Error) {
+      if (
+        error.message === "Channel not found" ||
+        error.message === "Thread not found"
+      ) {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
+  }
+});
+
 app.get("/download/:folderID/:fileID", async (req, res) => {
   const textChannelID = req.params.folderID;
   const threadID = req.params.fileID;

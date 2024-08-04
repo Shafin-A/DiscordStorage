@@ -133,6 +133,36 @@
         }
       }
     },
+    "/folder/{folderID}/file/{fileID}": {
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "folderID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fileID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
     "/download/{folderID}/{fileID}": {
       "get": {
         "description": "",
