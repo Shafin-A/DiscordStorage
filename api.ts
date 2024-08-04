@@ -1,6 +1,5 @@
 import {
   ChannelType,
-  Client,
   GatewayIntentBits,
   TextChannel,
   ThreadAutoArchiveDuration,
@@ -130,7 +129,7 @@ app.patch("/folder/:folderID", async (req, res) => {
   }
 });
 
-// Get folder details
+// Get files in folder
 app.get("/folder/:folderID", async (req, res) => {
   try {
     const textChannelID = req.params.folderID;
@@ -206,7 +205,42 @@ app.get("/folder/:folderID", async (req, res) => {
   }
 });
 
-app.get("/folders", async (req, res) => {});
+// Get all folders
+app.get("/folders", async (_req, res) => {
+  try {
+    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const guildID = process.env.GUILD_ID!;
+    const guild = client.guilds.cache.get(guildID);
+
+    if (!guild) {
+      throw new Error("Guild not found");
+    }
+
+    await guild.channels.fetch();
+
+    const channels = guild.channels.cache.filter(
+      (channel) => channel.type === ChannelType.GuildText
+    );
+
+    const folders = channels.map((channel) => ({
+      id: channel.id,
+      name: channel.name,
+    }));
+
+    res.json({
+      folders: folders,
+    });
+  } catch (error) {
+    console.error("Error fetching folders:", error);
+    if (error instanceof Error) {
+      if (error.message === "Guild not found") {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
+  }
+});
 
 app.get("/download/:folderID/:fileID", async (req, res) => {
   const textChannelID = req.params.folderID;
