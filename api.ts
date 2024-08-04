@@ -246,14 +246,12 @@ app.get("/folders", async (_req, res) => {
 app.delete("/folder/:folderID/file/:fileID", async (req, res) => {
   try {
     const textChannelID = req.params.folderID;
-    const fileID = req.params.fileID;
+    const threadID = req.params.fileID;
 
     const client = await loginDiscord([
       GatewayIntentBits.Guilds,
       GatewayIntentBits.MessageContent,
     ]);
-    const token = process.env.DISCORD_TOKEN;
-    await client.login(token);
 
     const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
 
@@ -261,7 +259,7 @@ app.delete("/folder/:folderID/file/:fileID", async (req, res) => {
       throw new Error("Channel not found");
     }
 
-    const thread = await channel.threads.fetch(fileID);
+    const thread = await channel.threads.fetch(threadID);
 
     if (!thread) {
       throw new Error("Thread not found");
