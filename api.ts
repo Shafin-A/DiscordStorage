@@ -8,11 +8,13 @@ import {
 
 require("dotenv").config({ path: "./.env" });
 
-import express, { Response } from "express";
+import express from "express";
 import multer from "multer";
 
 import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./swagger-output.json";
+
+import { streamFile, chunkBuffer, loginDiscord } from "./helpers";
 
 const app = express();
 app.use(express.json());
@@ -22,59 +24,14 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
-const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
-  const chunks = [];
-  for (let i = 0; i < buffer.length; i += chunkSize) {
-    chunks.push(buffer.slice(i, i + chunkSize));
-  }
-  return chunks;
-};
-
-// Function to stream file to response
-const streamFile = async (
-  fileStream: ReadableStream<Uint8Array>,
-  res: Response
-): Promise<void> => {
-  try {
-    const reader = fileStream.getReader();
-
-    const pump = (): Promise<void> =>
-      reader
-        .read()
-        .then(({ done, value }) => {
-          if (done) {
-            res.status(200).end(); // Close the response stream when done
-            return;
-          }
-          console.log(value);
-          res.write(value); // Write chunk to response
-          return pump(); // Continue reading
-        })
-        .catch((error) => {
-          console.error("Error streaming response:", error);
-          res.status(500).end("Failed to download file.");
-        });
-
-    await pump(); // Start pumping the stream
-  } catch (error) {
-    console.error("Error streaming file:", error);
-    res.status(500).json({ error: "Failed to stream file" });
-  }
-};
-
 app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
 });
 
+// Create new folder
 app.post("/folder/:folderName", async (req, res) => {
-  // Login to Discord bot
-  const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
-  });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
-
   try {
+    const client = await loginDiscord([GatewayIntentBits.Guilds]);
     const guildID = process.env.GUILD_ID!;
     const guild = client.guilds.cache.get(guildID);
 
@@ -105,99 +62,91 @@ app.post("/folder/:folderName", async (req, res) => {
   }
 });
 
+// Delete folder
 app.delete("/folder/:folderID", async (req, res) => {
-  const textChannelID = req.params.folderID;
+  try {
+    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const textChannelID = req.params.folderID;
 
-  // Login to Discord bot
-  const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
-  });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+    // Get text channel
+    const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
 
-  // Get text channel
-  const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
-
-  if (channel) {
-    try {
-      await channel.delete();
-      res
-        .status(200)
-        .send(`Channel deleted: ${channel.name} with ID: ${channel.id}`);
-    } catch (error) {
-      console.error(
-        `Could not delete channel: ${channel.name} with ID: ${textChannelID}`
-      );
-      res
-        .sendStatus(500)
-        .json({ error: `Failed to delete channel with ID: ${textChannelID}` });
+    if (!channel) {
+      throw new Error("Channel not found");
     }
-  } else {
-    console.error(`Channel with ID ${textChannelID} returned null`);
+
+    // Delete text channel
+    await channel.delete();
     res
-      .sendStatus(404)
-      .json({ error: `Failed to find channel with ID: ${textChannelID}` });
+      .status(200)
+      .send(`Channel deleted: ${channel.name} with ID: ${channel.id}`);
+  } catch (error) {
+    console.error("Error deleting channel:", error);
+    if (error instanceof Error) {
+      if (error.message === "Channel not found") {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
   }
 });
 
+// Update folder name
 app.patch("/folder/:folderID", async (req, res) => {
   /*
-        #swagger.parameters['newName'] = {
-            in: 'body',     
-            type: 'string',
-            required: 'true',
-            description: 'The new name for the folder',
-    } */
-  const textChannelID = req.params.folderID;
+    #swagger.parameters['newName'] = {
+        in: 'body',     
+        type: 'string',
+        required: 'true',
+        description: 'The new name for the folder',
+    } 
+  */
+  try {
+    const textChannelID = req.params.folderID;
+    const client = await loginDiscord([GatewayIntentBits.Guilds]);
 
-  // Login to Discord bot
-  const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
-  });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+    // Get text channel
+    const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
 
-  // Get text channel
-  const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
-
-  if (channel) {
-    try {
-      await channel.setName(req.body.newName);
-      res
-        .status(200)
-        .send(
-          `Channel name updated with new name: ${channel.name} and ID: ${channel.id}`
-        );
-    } catch (error) {
-      console.error(
-        `Could not update channel name: ${channel.name} with ID: ${textChannelID}`
-      );
-      res.sendStatus(500).json({
-        error: `Failed to update channel name with ID: ${textChannelID}`,
-      });
+    if (!channel) {
+      throw new Error("Channel not found");
     }
-  } else {
-    console.error(`Channel with ID ${textChannelID} returned null`);
+
+    // Update channel name
+    await channel.setName(req.body.newName);
     res
-      .sendStatus(404)
-      .json({ error: `Failed to find channel with ID: ${textChannelID}` });
+      .status(200)
+      .send(`Channel name updated: ${channel.name} with ID: ${channel.id}`);
+  } catch (error) {
+    console.error("Error updating channel name:", error);
+    if (error instanceof Error) {
+      if (error.message === "Channel not found") {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
   }
 });
 
+// Get folder details
 app.get("/folder/:folderID", async (req, res) => {
-  const textChannelID = req.params.folderID;
+  try {
+    const textChannelID = req.params.folderID;
 
-  // Login to Discord bot
-  const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
-  });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+    const client = await loginDiscord([
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.MessageContent,
+    ]);
 
-  // Get text channel
-  const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
+    // Get text channel
+    const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
 
-  if (channel) {
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+
     // Get all threads in channel
     const activeThreads = (await channel.threads.fetchActive()).threads;
     const archivedThreads = (await channel.threads.fetchArchived()).threads;
@@ -205,7 +154,6 @@ app.get("/folder/:folderID", async (req, res) => {
     const allThreads = activeThreads.concat(archivedThreads);
 
     const files = [];
-
     let totalFileSize = 0;
 
     for (const thread of allThreads.values()) {
@@ -220,26 +168,21 @@ app.get("/folder/:folderID", async (req, res) => {
 
         // Second message is file size
         const fileSize = secondMessage
-          ? secondMessage.content.split(" ")[0]
-          : "Unknown";
+          ? parseInt(secondMessage.content.split(" ")[0])
+          : 0;
 
-        const threadID = thread.id;
-
-        totalFileSize += fileSize === "Unknown" ? 0 : parseInt(fileSize);
+        totalFileSize += fileSize;
 
         files.push({
-          [threadID]: {
-            fileName: fileName,
-            fileSize: fileSize,
-          },
+          fileID: thread.id,
+          fileName: fileName,
+          fileSize: fileSize,
         });
       } catch (error) {
         console.error(
           `Failed to fetch messages for thread ${thread.id}: ${error}`
         );
-        res.status(500).json({
-          error: `Failed to fetch messages for thread ${thread.id}: ${error}`,
-        });
+        throw new Error(`Failed to fetch messages for thread ${thread.id}`);
       }
     }
 
@@ -248,11 +191,18 @@ app.get("/folder/:folderID", async (req, res) => {
       folderSize: totalFileSize,
       files: files,
     });
-  } else {
-    console.error(`Channel with ID ${textChannelID} returned null`);
-    res
-      .sendStatus(404)
-      .json({ error: `Failed to find channel with ID: ${textChannelID}` });
+  } catch (error) {
+    console.error("Error fetching folder details:", error);
+    if (error instanceof Error) {
+      if (
+        error.message === "Channel not found" ||
+        error.message.startsWith("Failed to fetch messages")
+      ) {
+        res.status(404).send(error.message);
+      } else {
+        res.status(500).send("Internal Server Error");
+      }
+    }
   }
 });
 
@@ -262,10 +212,10 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
   const textChannelID = req.params.folderID;
   const threadID = req.params.fileID;
 
-  // Login to Discord bot
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+  const client = await loginDiscord([
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.MessageContent,
+  ]);
 
   // Get text channel - Folder
   const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
@@ -413,10 +363,7 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
 
   const textChannelID = req.params.folderID;
 
-  // Login to Discord bot
-  const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+  const client = await loginDiscord([GatewayIntentBits.Guilds]);
 
   // Get text channel - Folder
   const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
