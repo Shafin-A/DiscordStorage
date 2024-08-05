@@ -6,7 +6,6 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import Sort from "@/components/ui/sort";
-import { Sun } from "@phosphor-icons/react";
 
 import ModeToggle from "./modetoggle";
 

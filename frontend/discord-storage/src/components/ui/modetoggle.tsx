@@ -1,4 +1,4 @@
-import { Moon, MoonStars, Sun } from "@phosphor-icons/react";
+import { MoonStars, Sun } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import {
