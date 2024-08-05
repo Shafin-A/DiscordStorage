@@ -1,9 +1,11 @@
-import { Button } from "@/components/ui/button";
+import Sidebar from "@/components/ui/sidebar";
 
-export default function App() {
+const App = () => {
   return (
     <div>
-      <Button>Click me</Button>
+      <Sidebar />
     </div>
   );
-}
+};
+
+export default App;
