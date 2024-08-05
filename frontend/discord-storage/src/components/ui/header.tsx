@@ -5,16 +5,10 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Funnel } from "@phosphor-icons/react";
+import Sort from "@/components/ui/sort";
+import { Sun } from "@phosphor-icons/react";
+
+import ModeToggle from "./modetoggle";
 
 const Header = () => {
   return (
@@ -27,25 +21,10 @@ const Header = () => {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1 dark:text-white"
-          >
-            <Funnel size={16} />
-            Sort
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="dark:bg-zinc-950">
-          <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem checked>Name</DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem>Size</DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem>Date</DropdownMenuCheckboxItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex gap-1">
+        <ModeToggle />
+        <Sort />
+      </div>
     </header>
   );
 };

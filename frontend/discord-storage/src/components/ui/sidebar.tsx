@@ -14,7 +14,7 @@ const Sidebar = () => {
           size="sm"
           className="justify-start gap-2 text-left dark:text-white"
         >
-          <Plus size={16} />
+          <Plus size={16} weight="bold" />
           New Folder
         </Button>
         <Button
@@ -22,7 +22,7 @@ const Sidebar = () => {
           size="sm"
           className="justify-start gap-2 text-left dark:text-white"
         >
-          <UploadSimple size={16} />
+          <UploadSimple size={16} weight="bold" />
           Upload File
         </Button>
       </nav>
