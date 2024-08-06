@@ -38,10 +38,10 @@ const App = () => {
   ];
 
   return (
-    <div className="flex min-h-screen w-full bg-muted/40 dark:bg-zinc-900">
+    <div className="flex min-h-screen w-full bg-muted/40 dark:bg-zinc-800">
       <Sidebar />
       <div className="flex-1 p-4 sm:p-6">
-        <Header breadcrumbs={[{ href: "/", label: "Home" }]} page="Document" />
+        <Header page="Home" />
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {cardData.map((data, index) => (
             <Card key={index} className="group">

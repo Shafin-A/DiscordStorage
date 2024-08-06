@@ -18,7 +18,7 @@ type HeaderProps = {
 const Header: React.FC<HeaderProps> = ({ breadcrumbs = [], page }) => {
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b dark:border-gray-600 dark:bg-zinc-950 px-4 sm:px-6 rounded-md">
-      {breadcrumbs.length > 0 && (
+      {breadcrumbs.length > 0 ? (
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((breadcrumb, index) => (
@@ -31,16 +31,16 @@ const Header: React.FC<HeaderProps> = ({ breadcrumbs = [], page }) => {
                 </BreadcrumbItem>
               </div>
             ))}
-            {page && (
-              <>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{page}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </>
-            )}
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{page}</BreadcrumbPage>
+            </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      ) : (
+        <BreadcrumbItem>
+          <BreadcrumbPage>{page}</BreadcrumbPage>
+        </BreadcrumbItem>
       )}
       <div className="flex gap-1">
         <ModeToggle />
