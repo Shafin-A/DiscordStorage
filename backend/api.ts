@@ -13,9 +13,13 @@ import multer from "multer";
 import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./swagger-output.json";
 
+import cors from "cors";
+
 import { streamFile, chunkBuffer, loginDiscord } from "./helpers";
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
