@@ -176,6 +176,7 @@ app.get("/folder/:folderID", async (req, res) => {
           fileID: thread.id,
           fileName: fileName,
           fileSize: fileSize,
+          dateCreated: thread.createdAt,
         });
       } catch (error) {
         console.error(
