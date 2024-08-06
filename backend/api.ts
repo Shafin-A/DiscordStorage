@@ -15,7 +15,12 @@ import swaggerFile from "./swagger-output.json";
 
 import cors from "cors";
 
-import { streamFile, chunkBuffer, loginDiscord } from "./helpers";
+import {
+  streamFile,
+  chunkBuffer,
+  loginDiscord,
+  fetchFolderDetails,
+} from "./helpers";
 
 const app = express();
 
@@ -137,64 +142,8 @@ app.patch("/folder/:folderID", async (req, res) => {
 app.get("/folder/:folderID", async (req, res) => {
   try {
     const textChannelID = req.params.folderID;
-
-    const client = await loginDiscord([
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.MessageContent,
-    ]);
-
-    // Get text channel
-    const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
-
-    if (!channel) {
-      throw new Error("Channel not found");
-    }
-
-    // Get all threads in channel
-    const activeThreads = (await channel.threads.fetchActive()).threads;
-    const archivedThreads = (await channel.threads.fetchArchived()).threads;
-
-    const allThreads = activeThreads.concat(archivedThreads);
-
-    const files = [];
-    let totalFileSize = 0;
-
-    for (const thread of allThreads.values()) {
-      try {
-        // Fetch the first & second message in the thread, messages fetch latest -> oldest
-        const messages = await thread.messages.fetch();
-        const firstMessage = messages.last();
-        const secondMessage = messages.at(messages.size - 2);
-
-        // First message is filename
-        const fileName = firstMessage ? firstMessage.content : "Unknown";
-
-        // Second message is file size
-        const fileSize = secondMessage
-          ? parseInt(secondMessage.content.split(" ")[0])
-          : 0;
-
-        totalFileSize += fileSize;
-
-        files.push({
-          fileID: thread.id,
-          fileName: fileName,
-          fileSize: fileSize,
-          dateCreated: thread.createdAt,
-        });
-      } catch (error) {
-        console.error(
-          `Failed to fetch messages for thread ${thread.id}: ${error}`
-        );
-        throw new Error(`Failed to fetch messages for thread ${thread.id}`);
-      }
-    }
-
-    res.json({
-      folderName: channel.name,
-      folderSize: totalFileSize,
-      files: files,
-    });
+    const folderDetails = await fetchFolderDetails(textChannelID);
+    res.json(folderDetails);
   } catch (error) {
     console.error("Error fetching folder details:", error);
     if (error instanceof Error) {
@@ -227,10 +176,15 @@ app.get("/folders", async (_req, res) => {
       (channel) => channel.type === ChannelType.GuildText
     );
 
-    const folders = channels.map((channel) => ({
-      id: channel.id,
-      name: channel.name,
-    }));
+    const folders = await Promise.all(
+      channels.map(async (channel) => {
+        const folderDetails = await fetchFolderDetails(channel.id);
+        return {
+          id: channel.id,
+          ...folderDetails,
+        };
+      })
+    );
 
     res.json({
       folders: folders,
