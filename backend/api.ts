@@ -186,9 +186,7 @@ app.get("/folders", async (_req, res) => {
       })
     );
 
-    res.json({
-      folders: folders,
-    });
+    res.json(folders);
   } catch (error) {
     console.error("Error fetching folders:", error);
     if (error instanceof Error) {
