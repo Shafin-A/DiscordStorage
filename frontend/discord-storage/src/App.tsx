@@ -153,8 +153,14 @@ const App = () => {
             ? selectedFolder.files.map((file: File) => (
                 <Card
                   key={file.fileID}
-                  className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                  className={`group hover:scale-105 ${
+                    progress[file.fileID] > 0
+                      ? "cursor-not-allowed"
+                      : "cursor-pointer"
+                  } dark:bg-zinc-900`}
                   onClick={() =>
+                    (!(file.fileID in progress) ||
+                      progress[file.fileID] === 0) &&
                     handleFileDownload(
                       selectedFolder.id,
                       file.fileID,
