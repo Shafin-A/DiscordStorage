@@ -4,13 +4,45 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { convertBytes, getFileIcon, getLatestDate } from "@/lib/utils";
 import { Folder, File } from "@/interfaces";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Folder as FolderIcon } from "@phosphor-icons/react";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [progress, setProgress] = useState<{ [key: string]: number }>({});
 
-  const { isPending, error, data, isFetching, isLoading } = useQuery({
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:3000");
+    socket.addEventListener("message", (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "progressOutsideLimit") {
+        const { bufferIndex, totalBuffers } = data;
+        // Buffer progress is 50% of the total progress
+        const bufferProgress = (bufferIndex / totalBuffers) * 50;
+        setProgress((prevProgress) => ({
+          ...prevProgress,
+          [data.fileID]: Math.max(
+            prevProgress[data.fileID] || 0,
+            bufferProgress
+          ),
+        }));
+      }
+      if (data.type === "progressWithinLimit") {
+        const { progress } = data;
+        setProgress((prevProgress) => ({
+          ...prevProgress,
+          [data.fileID]: Math.max(prevProgress[data.fileID] || 0, progress),
+        }));
+      }
+    });
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  const { isPending, error, data } = useQuery({
     queryKey: ["foldersData"],
     queryFn: async () => {
       const response = await fetch("http://localhost:3000/folders");
@@ -30,6 +62,81 @@ const App = () => {
     setSelectedFolder(null);
   };
 
+  const handleFileDownload = async (
+    folderID: string,
+    fileID: string,
+    fileName: string
+  ) => {
+    setProgress({ [fileID]: 0.1 });
+    try {
+      const response = await fetch(
+        `http://localhost:3000/download/${folderID}/${fileID}`
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const contentLength = response.headers.get("content-length");
+      if (!contentLength) {
+        throw new Error("Content-Length response header is missing");
+      }
+
+      const total = parseInt(contentLength, 10);
+      let loaded = 0;
+
+      const reader = response.body?.getReader();
+      const stream = new ReadableStream({
+        start(controller) {
+          function push() {
+            reader?.read().then(({ done, value }) => {
+              if (done) {
+                controller.close();
+                return;
+              }
+
+              loaded += value?.length || 0;
+              // File download progress is 50% of the total progress
+              const fileDownloadProgress = 50 + (loaded / total) * 50;
+              setProgress((prevProgress) => ({
+                ...prevProgress,
+                [fileID]: Math.max(
+                  prevProgress[fileID] || 0,
+                  fileDownloadProgress
+                ),
+              }));
+              controller.enqueue(value);
+              push();
+            });
+          }
+          push();
+        },
+      });
+
+      const responseBlob = await new Response(stream).blob();
+      const downloadUrl = window.URL.createObjectURL(responseBlob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setTimeout(() => {
+        setProgress((prevProgress) => ({
+          ...prevProgress,
+          [fileID]: 0,
+        }));
+      }, 500);
+    } catch (error) {
+      console.error("Download failed", error);
+      setProgress((prevProgress) => ({
+        ...prevProgress,
+        [fileID]: 0,
+      }));
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full bg-muted/40 dark:bg-zinc-800">
       <Sidebar />
@@ -46,6 +153,13 @@ const App = () => {
                 <Card
                   key={file.fileID}
                   className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                  onClick={() =>
+                    handleFileDownload(
+                      selectedFolder.id,
+                      file.fileID,
+                      file.fileName
+                    )
+                  }
                 >
                   <div className="flex items-center justify-center p-4">
                     {getFileIcon(file.fileName)}
@@ -58,6 +172,11 @@ const App = () => {
                     <div className="text-xs text-muted-foreground">
                       Modified: {getLatestDate([file])}
                     </div>
+                    {progress[file.fileID] > 0 && (
+                      <progress value={progress[file.fileID]} max="100">
+                        {progress[file.fileID]}%
+                      </progress>
+                    )}
                   </CardContent>
                 </Card>
               ))
