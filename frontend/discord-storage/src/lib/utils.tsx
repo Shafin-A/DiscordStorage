@@ -1,6 +1,15 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { File } from "@/interfaces";
+import {
+  File as FileIcon,
+  FileDoc,
+  FilePdf,
+  FileXls,
+  FilePpt,
+  FileImage,
+  FileVideo,
+} from "@phosphor-icons/react";
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
@@ -50,4 +59,42 @@ export const getLatestDate = (files: File[]) => {
   const date = new Date(latestDateFile.dateCreated);
 
   return relativeTime(date);
+};
+
+export const getFileExtension = (filename: string) =>
+  filename.substring(filename.lastIndexOf(".") + 1, filename.length) ||
+  filename;
+
+export const getFileIcon = (filename: string) => {
+  const fileExtension = getFileExtension(filename).toLowerCase();
+
+  switch (fileExtension) {
+    case "pdf":
+      return <FilePdf size={48} />;
+    case "xls":
+    case "xlsx":
+      return <FileXls size={48} />;
+    case "doc":
+    case "docx":
+      return <FileDoc size={48} />;
+    case "ppt":
+    case "pptx":
+      return <FilePpt size={48} />;
+    case "png":
+    case "apng":
+    case "jpg":
+    case "jpeg":
+    case "gif":
+      return <FileImage size={48} />;
+    case "mp4":
+    case "mkv":
+    case "mov":
+    case "webm":
+    case "avi":
+    case "mpg":
+    case "m4v":
+      return <FileVideo size={48} />;
+    default:
+      return <FileIcon size={48} />;
+  }
 };

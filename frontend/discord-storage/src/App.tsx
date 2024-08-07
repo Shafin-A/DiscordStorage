@@ -2,7 +2,7 @@ import Sidebar from "@/components/ui/sidebar";
 import Header from "@/components/ui/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { convertBytes, getLatestDate } from "@/lib/utils";
+import { convertBytes, getFileIcon, getLatestDate } from "@/lib/utils";
 import { Folder, File } from "@/interfaces";
 import { useState } from "react";
 import { Folder as FolderIcon } from "@phosphor-icons/react";
@@ -48,7 +48,7 @@ const App = () => {
                   className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"
                 >
                   <div className="flex items-center justify-center p-4">
-                    <FolderIcon className="h-12 w-12 text-primary" />
+                    {getFileIcon(file.fileName)}
                   </div>
                   <CardContent className="flex flex-col items-start gap-1">
                     <h3 className="text-base font-medium">{file.fileName}</h3>
