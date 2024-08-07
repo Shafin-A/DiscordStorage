@@ -14,6 +14,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerFile from "./swagger-output.json";
 
 import cors from "cors";
+import WebSocket from "ws";
 
 import {
   streamFile,
@@ -32,8 +33,13 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Running on http://localhost:${PORT}`);
+});
+
+const wss = new WebSocket.Server({ server });
+wss.on("connection", (_ws) => {
+  console.log("Client connected");
 });
 
 // Create new folder
@@ -265,7 +271,7 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
 
       if (messages) {
         // Within file size limit, no chunks
-        if (messages.size === 2) {
+        if (messages.size === 3) {
           try {
             // Latest message fetched first
             const latestMessage = messages.first();
@@ -303,10 +309,17 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
                   "Content-Type",
                   contentType ? contentType : "Unknown"
                 );
+                res.setHeader("Content-Length", attachment.size);
 
                 // Download the file
                 if (!response.body) throw new Error("response.body is null");
-                await streamFile(response.body, res);
+                await streamFile(
+                  response.body,
+                  res,
+                  wss,
+                  threadID,
+                  attachment.size
+                );
               } catch (error) {
                 console.error("Error downloading file:", error);
                 res.status(500).json({ error: "Failed to download file" });
@@ -351,6 +364,20 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             buffers.push(buffer);
+
+            // Send progress update to WebSocket clients
+            wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(
+                  JSON.stringify({
+                    fileID: threadID,
+                    type: "progressOutsideLimit",
+                    bufferIndex: i + 1,
+                    totalBuffers: downloadURLs.length,
+                  })
+                );
+              }
+            });
 
             console.log(`Buffer ${i + 1}/${downloadURLs.length} done`);
           }

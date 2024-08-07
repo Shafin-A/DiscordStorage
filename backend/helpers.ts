@@ -5,6 +5,8 @@ import {
   TextChannel,
 } from "discord.js";
 import { Response } from "express";
+import { IncomingMessage } from "http";
+import { Server, WebSocket } from "ws";
 
 export const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
   const chunks = [];
@@ -16,10 +18,14 @@ export const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
 
 export const streamFile = async (
   fileStream: ReadableStream<Uint8Array>,
-  res: Response
+  res: Response,
+  wss: Server<typeof WebSocket, typeof IncomingMessage>,
+  fileID: string,
+  fileSize: number
 ): Promise<void> => {
   try {
     const reader = fileStream.getReader();
+    let totalBytes = 0;
 
     const pump = async (): Promise<void> => {
       try {
@@ -28,7 +34,25 @@ export const streamFile = async (
           res.end(); // Close the response stream when done
           return;
         }
+
+        totalBytes += value.length;
         res.write(Buffer.from(value)); // Convert Uint8Array to Buffer and write chunk to response
+
+        // Emit progress
+        if (wss) {
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({
+                  type: "progressWithinLimit",
+                  fileID: fileID,
+                  progress: (totalBytes / fileSize) * 100,
+                })
+              );
+            }
+          });
+        }
+
         await pump(); // Continue reading
       } catch (error) {
         console.error("Error streaming response:", error);
