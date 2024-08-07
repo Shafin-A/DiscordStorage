@@ -11,7 +11,7 @@ import Sort from "@/components/ui/sort";
 import ModeToggle from "@/components/ui/modetoggle";
 
 type HeaderProps = {
-  breadcrumbs?: { href: string; label: string }[];
+  breadcrumbs?: { onClick: () => void; label: string }[];
   page?: string;
 };
 
@@ -22,10 +22,10 @@ const Header: React.FC<HeaderProps> = ({ breadcrumbs = [], page }) => {
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbs.map((breadcrumb, index) => (
-              <div key={breadcrumb.href}>
+              <div key={index}>
                 {index > 0 && <BreadcrumbSeparator />}
-                <BreadcrumbItem>
-                  <BreadcrumbLink href={breadcrumb.href}>
+                <BreadcrumbItem className="cursor-pointer">
+                  <BreadcrumbLink onClick={breadcrumb.onClick}>
                     {breadcrumb.label}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
