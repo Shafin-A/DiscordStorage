@@ -6,6 +6,7 @@ import { convertBytes, getFileIcon, getLatestDate } from "@/lib/utils";
 import { Folder, File } from "@/interfaces";
 import { useEffect, useState } from "react";
 import { Folder as FolderIcon } from "@phosphor-icons/react";
+import { Progress } from "@/components/ui/progress";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -173,9 +174,7 @@ const App = () => {
                       Modified: {getLatestDate([file])}
                     </div>
                     {progress[file.fileID] > 0 && (
-                      <progress value={progress[file.fileID]} max="100">
-                        {progress[file.fileID]}%
-                      </progress>
+                      <Progress value={progress[file.fileID]} />
                     )}
                   </CardContent>
                 </Card>
