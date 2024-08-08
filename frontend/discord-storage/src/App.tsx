@@ -2,8 +2,13 @@ import Sidebar from "@/components/ui/sidebar";
 import Header from "@/components/ui/header";
 import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { convertBytes, getFileIcon, getLatestDate } from "@/lib/utils";
-import { Folder, File } from "@/interfaces";
+import {
+  convertBytes,
+  getFileIcon,
+  getLatestDate,
+  sortItems,
+} from "@/lib/utils";
+import { Folder, File, SortOptions } from "@/interfaces";
 import { useEffect, useState } from "react";
 import { Folder as FolderIcon } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +16,9 @@ import { Progress } from "@/components/ui/progress";
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
+
+  const [sortOption, setSortOption] = useState<SortOptions>("Name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
@@ -62,6 +70,18 @@ const App = () => {
   const handleBackClick = () => {
     setSelectedFolder(null);
   };
+
+  const handleSortChange = (option: SortOptions, order: "asc" | "desc") => {
+    setSortOption(option);
+    setSortOrder(order);
+  };
+
+  const sortedFiles = selectedFolder
+    ? (sortItems([...selectedFolder.files], sortOption, sortOrder) as File[])
+    : [];
+  const sortedFolders = !selectedFolder
+    ? (sortItems([...data], sortOption, sortOrder) as Folder[])
+    : [];
 
   const handleFileDownload = async (
     folderID: string,
@@ -147,10 +167,13 @@ const App = () => {
             selectedFolder ? [{ onClick: handleBackClick, label: "Home" }] : []
           }
           page={selectedFolder ? selectedFolder.folderName : "Home"}
+          sortOption={sortOption}
+          sortOrder={sortOrder}
+          handleSortChange={handleSortChange}
         />
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
-            ? selectedFolder.files.map((file: File) => (
+            ? sortedFiles.map((file: File) => (
                 <Card
                   key={file.fileID}
                   className={`group hover:scale-105 ${
@@ -185,7 +208,7 @@ const App = () => {
                   </CardContent>
                 </Card>
               ))
-            : data.map((folder: Folder) => (
+            : sortedFolders.map((folder: Folder) => (
                 <Card
                   key={folder.id}
                   className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"

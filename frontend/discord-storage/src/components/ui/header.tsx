@@ -7,15 +7,25 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import Sort from "@/components/ui/sort";
 import ModeToggle from "@/components/ui/modetoggle";
+import { SortOptions } from "@/interfaces";
+import SortDropdown from "./sortdropdown";
 
 type HeaderProps = {
   breadcrumbs?: { onClick: () => void; label: string }[];
   page?: string;
+  sortOption: SortOptions;
+  sortOrder: "asc" | "desc";
+  handleSortChange: (option: SortOptions, order: "asc" | "desc") => void;
 };
 
-const Header: React.FC<HeaderProps> = ({ breadcrumbs = [], page }) => {
+const Header: React.FC<HeaderProps> = ({
+  breadcrumbs = [],
+  page,
+  sortOption,
+  sortOrder,
+  handleSortChange,
+}) => {
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b dark:border-gray-600 dark:bg-zinc-950 px-4 sm:px-6 rounded-md">
       {breadcrumbs.length > 0 ? (
@@ -44,7 +54,11 @@ const Header: React.FC<HeaderProps> = ({ breadcrumbs = [], page }) => {
       )}
       <div className="flex gap-1">
         <ModeToggle />
-        <Sort />
+        <SortDropdown
+          sortOption={sortOption}
+          handleSortChange={handleSortChange}
+          sortOrder={sortOrder}
+        />
       </div>
     </header>
   );

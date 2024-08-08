@@ -11,3 +11,5 @@ export interface File {
   fileSize: number;
   dateCreated: string;
 }
+
+export type SortOptions = "Name" | "Size" | "Date";

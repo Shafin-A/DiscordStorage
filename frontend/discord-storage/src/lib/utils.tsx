@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { File } from "@/interfaces";
+import { File, Folder, SortOptions } from "@/interfaces";
 import {
   File as FileIcon,
   FileDoc,
@@ -97,4 +97,47 @@ export const getFileIcon = (filename: string) => {
     default:
       return <FileIcon size={48} />;
   }
+};
+
+export const sortItems = (
+  items: Folder[] | File[],
+  option: SortOptions,
+  order: "asc" | "desc"
+) => {
+  let compare = 0;
+
+  return items.sort((a, b) => {
+    switch (option) {
+      case "Name":
+        if ("fileName" in a && "fileName" in b) {
+          compare = (a.fileName as string).localeCompare(b.fileName as string);
+        } else if ("folderName" in a && "folderName" in b) {
+          compare = (a.folderName as string).localeCompare(
+            b.folderName as string
+          );
+        }
+        break;
+      case "Size":
+        if ("fileSize" in a && "fileSize" in b) {
+          compare = a.fileSize - b.fileSize;
+        } else if ("folderSize" in a && "folderSize" in b) {
+          compare = a.folderSize - b.folderSize;
+        }
+        break;
+      case "Date":
+        if ("dateCreated" in a && "dateCreated" in b) {
+          compare =
+            new Date(a.dateCreated).valueOf() -
+            new Date(b.dateCreated).valueOf();
+        } else if ("folderSize" in a && "folderSize" in b) {
+          compare =
+            new Date(getLatestDate(a.files)).valueOf() -
+            new Date(getLatestDate(b.files)).valueOf();
+        }
+        break;
+      default:
+        break;
+    }
+    return order === "asc" ? compare : -compare;
+  });
 };
