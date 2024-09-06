@@ -35,7 +35,13 @@ const Header: React.FC<HeaderProps> = ({
               <div key={index}>
                 {index > 0 && <BreadcrumbSeparator />}
                 <BreadcrumbItem className="cursor-pointer">
-                  <BreadcrumbLink onClick={breadcrumb.onClick}>
+                  <BreadcrumbLink
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      breadcrumb.onClick();
+                    }}
+                  >
                     {breadcrumb.label}
                   </BreadcrumbLink>
                 </BreadcrumbItem>

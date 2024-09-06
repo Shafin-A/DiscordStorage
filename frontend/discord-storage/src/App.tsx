@@ -88,7 +88,13 @@ const App = () => {
     fileID: string,
     fileName: string
   ) => {
-    setProgress({ [fileID]: 0.1 });
+    if (progress[fileID] && progress[fileID] > 0) return; // Skip if progress is ongoing
+
+    setProgress((prevProgress) => ({
+      ...prevProgress,
+      [fileID]: 0.1, // Setting a progress value so card gets disabled
+    }));
+
     try {
       const response = await fetch(
         `http://localhost:3000/download/${folderID}/${fileID}`
@@ -144,6 +150,7 @@ const App = () => {
       window.URL.revokeObjectURL(downloadUrl);
 
       setTimeout(() => {
+        // Looks/feels better with some delay
         setProgress((prevProgress) => ({
           ...prevProgress,
           [fileID]: 0,
@@ -181,6 +188,18 @@ const App = () => {
                       ? "cursor-not-allowed"
                       : "cursor-pointer"
                   } dark:bg-zinc-900`}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      (!(file.fileID in progress) ||
+                        progress[file.fileID] === 0) &&
+                        handleFileDownload(
+                          selectedFolder.id,
+                          file.fileID,
+                          file.fileName
+                        );
+                    }
+                  }}
                   onClick={() =>
                     (!(file.fileID in progress) ||
                       progress[file.fileID] === 0) &&
@@ -212,6 +231,12 @@ const App = () => {
                 <Card
                   key={folder.id}
                   className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleCardClick(folder);
+                    }
+                  }}
                   onClick={() => handleCardClick(folder)}
                 >
                   <div className="flex items-center justify-center p-4">
