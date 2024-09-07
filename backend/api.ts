@@ -1,9 +1,4 @@
-import {
-  ChannelType,
-  GatewayIntentBits,
-  TextChannel,
-  ThreadAutoArchiveDuration,
-} from "discord.js";
+import { ChannelType, GatewayIntentBits, TextChannel } from "discord.js";
 
 require("dotenv").config({ path: "../.env" });
 
@@ -17,10 +12,12 @@ import cors from "cors";
 import WebSocket from "ws";
 
 import {
-  streamFile,
   chunkBuffer,
-  loginDiscord,
+  createPreviewBuffer,
+  createThreadAndSendChunks,
   fetchFolderDetails,
+  loginDiscord,
+  streamFile,
 } from "./helpers";
 
 const app = express();
@@ -434,51 +431,20 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
     // Setting max file sizes
     const fileBuffer = req.file.buffer;
     const fileSize = fileBuffer.length;
-    const maxChunkSize = 23 * 1024 * 1024; // 23 MB
+    const maxChunkSize = 7 * 1024 * 1024; // 7 MB
 
-    // Function to create a thread and send file chunks
-    const createThreadAndSendChunks = async (
-      threadName: string,
-      fileName: string,
-      chunks: Buffer[]
-    ) => {
-      const thread = await channel.threads.create({
-        name: threadName,
-        autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
-        reason: `${fileName} Thread`,
-      });
-
-      await thread.send(fileName);
-      await thread.send(`${fileSize} bytes`);
-
-      for (let i = 0; i < chunks.length; i++) {
-        console.log(`Uploading chunk ${i + 1}/${chunks.length}...`);
-
-        await thread.send({
-          files: [
-            {
-              attachment: chunks[i],
-              name:
-                chunks.length == 1
-                  ? `${fileName}`
-                  : `${fileName} Part ${i + 1}.txt`,
-            },
-          ],
-        });
-
-        console.log(`Chunk ${i + 1}/${chunks.length} uploaded.`);
-      }
-
-      return thread;
-    };
+    const previewBuffer: Buffer | null = await createPreviewBuffer(req.file);
 
     if (fileSize > maxChunkSize) {
       // Break into chunks and create a thread
       const chunks = chunkBuffer(fileBuffer, maxChunkSize);
       const thread = await createThreadAndSendChunks(
+        channel,
         req.file.originalname.substring(0, 50),
         req.file.originalname,
-        chunks
+        fileSize,
+        chunks,
+        previewBuffer
       );
 
       return res.json({
@@ -489,9 +455,12 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
     } else {
       // Create a thread and send the file without chunks
       const thread = await createThreadAndSendChunks(
+        channel,
         req.file.originalname.substring(0, 50),
         req.file.originalname,
-        [fileBuffer]
+        fileSize,
+        [fileBuffer],
+        previewBuffer
       );
 
       res.json({

@@ -3,10 +3,19 @@ import {
   ClientOptions,
   GatewayIntentBits,
   TextChannel,
+  ThreadAutoArchiveDuration,
 } from "discord.js";
 import { Response } from "express";
 import { IncomingMessage } from "http";
 import { Server, WebSocket } from "ws";
+import fs from "fs";
+import path from "path";
+import sharp from "sharp";
+
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+import ffmpeg from "fluent-ffmpeg";
+
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 export const chunkBuffer = (buffer: Buffer, chunkSize: number) => {
   const chunks = [];
@@ -136,4 +145,92 @@ export const fetchFolderDetails = async (textChannelID: string) => {
     folderSize: totalFileSize,
     files: files,
   };
+};
+
+export const createThreadAndSendChunks = async (
+  channel: TextChannel,
+  threadName: string,
+  fileName: string,
+  fileSize: number,
+  chunks: Buffer[],
+  preview: Buffer | null
+) => {
+  const thread = await channel.threads.create({
+    name: threadName,
+    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+    reason: `${fileName} Thread`,
+  });
+
+  await thread.send(fileName);
+  await thread.send(`${fileSize} bytes`);
+
+  preview
+    ? await thread.send({
+        files: [{ attachment: preview, name: "preview.png" }],
+      })
+    : await thread.send("No preview available for this file.");
+
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Uploading chunk ${i + 1}/${chunks.length}...`);
+
+    if ((i + 1) % 5 === 0)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    await thread.send({
+      files: [
+        {
+          attachment: chunks[i],
+          name:
+            chunks.length == 1
+              ? `${fileName}`
+              : `${fileName} Part ${i + 1}.txt`,
+        },
+      ],
+    });
+
+    console.log(`Chunk ${i + 1}/${chunks.length} uploaded.`);
+  }
+
+  return thread;
+};
+
+export const createPreviewBuffer = async (file: Express.Multer.File) => {
+  const isImage = file.mimetype.startsWith("image/");
+  const isVideo = file.mimetype.startsWith("video/");
+
+  let previewBuffer: Buffer | null = null;
+
+  if (isImage) {
+    previewBuffer = await sharp(file.buffer).resize(1280, 720).toBuffer();
+  } else if (isVideo) {
+    // Temporary folder for storing video frames
+    const tempDir = path.join(__dirname, "temp");
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir);
+    }
+
+    const videoFilePath = path.join(tempDir, file.originalname);
+
+    fs.writeFileSync(videoFilePath, file.buffer);
+
+    const framePath = path.join(tempDir, `${file.originalname}-frame.png`);
+    await new Promise((resolve, reject) => {
+      ffmpeg(videoFilePath)
+        .screenshots({
+          timestamps: ["1"], // Capture frame at 1 second
+          filename: path.basename(framePath),
+          folder: tempDir,
+          size: "1280x720",
+        })
+        .on("end", resolve)
+        .on("error", reject);
+    });
+
+    previewBuffer = await sharp(framePath).resize(1280, 720).toBuffer();
+
+    // Clean up the temporary files
+    fs.unlinkSync(videoFilePath);
+    fs.unlinkSync(framePath);
+  }
+  return previewBuffer;
 };
