@@ -6,6 +6,7 @@ import {
   convertBytes,
   getFileIcon,
   getLatestDate,
+  relativeTime,
   sortItems,
 } from "@/lib/utils";
 import { Folder, File, SortOptions, Dialogs } from "@/interfaces";
@@ -258,7 +259,7 @@ const App = () => {
                             {convertBytes(file.fileSize)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Modified: {getLatestDate([file])}
+                            Modified: {relativeTime(getLatestDate([file]))}
                           </div>
                           {progress[file.fileID] > 0 && (
                             <Progress value={progress[file.fileID]} />
@@ -356,7 +357,7 @@ const App = () => {
                           {convertBytes(folder.folderSize)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Modified: {getLatestDate(folder.files)}
+                          Modified: {relativeTime(getLatestDate(folder.files))}
                         </div>
                       </CardContent>
                     </Card>

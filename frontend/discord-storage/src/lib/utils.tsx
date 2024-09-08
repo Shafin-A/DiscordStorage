@@ -58,7 +58,7 @@ export const getLatestDate = (files: File[]) => {
 
   const date = new Date(latestDateFile.dateCreated);
 
-  return relativeTime(date);
+  return date;
 };
 
 export const getFileExtension = (filename: string) =>
