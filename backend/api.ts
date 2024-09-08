@@ -264,19 +264,19 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
 
     if (thread) {
       // Get messages with attachments
-      const messages = await thread.messages.fetch();
+      const messages = (await thread.messages.fetch()).sort(
+        (userA, userB) => userA.createdTimestamp - userB.createdTimestamp
+      );
 
       if (messages) {
         // Within file size limit, no chunks
-        if (messages.size === 3) {
+        if (messages.size === 4) {
           try {
-            // Latest message fetched first
-            const latestMessage = messages.first();
-
             // Oldest message will be file name
-            const oldestMessage = messages.last();
+            const oldestMessage = messages.at(0);
             const fileName = oldestMessage ? oldestMessage.content : "Unknown";
 
+            const latestMessage = messages.at(-1);
             if (latestMessage && latestMessage.attachments.size === 1) {
               const attachment = latestMessage.attachments.first();
               if (!attachment) {
@@ -323,7 +323,7 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
               }
             } else {
               console.log(
-                "The second message does not have exactly one attachment."
+                "The latest message does not have exactly one attachment."
               );
             }
           } catch (error) {
@@ -334,17 +334,19 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
             res.status(500).json({ error: "Failed to download file" });
           }
         }
-        // Larger than 25 MB case
+        // Larger than 7 MB case
         else {
           // Oldest message will be file name
-          const oldestMessage = messages.last();
+          const oldestMessage = messages.at(0);
           const fileName = oldestMessage ? oldestMessage.content : "Unknown";
 
           const downloadURLs: string[] = [];
-          messages.forEach((message) => {
+          Array.from(messages.values()).forEach((message, index) => {
+            if (index === 2) return; // Preview message might have attachment
+
             if (message.attachments.size > 0) {
               message.attachments.forEach((attachment) =>
-                downloadURLs.unshift(attachment.url)
+                downloadURLs.push(attachment.url)
               );
             }
           });

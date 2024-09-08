@@ -106,15 +106,26 @@ export const fetchFolderDetails = async (textChannelID: string) => {
 
   const allThreads = activeThreads.concat(archivedThreads);
 
-  const files = [];
+  type File = {
+    fileID: string;
+    fileName: string;
+    fileSize: number;
+    dateCreated: Date | null;
+    previewUrl?: string;
+  };
+
+  const files: File[] = [];
   let totalFileSize = 0;
 
   for (const thread of allThreads.values()) {
     try {
-      // Fetch the first & second message in the thread, messages fetch latest -> oldest
-      const messages = await thread.messages.fetch();
-      const firstMessage = messages.last();
-      const secondMessage = messages.at(messages.size - 2);
+      // Fetch the first, second & third messages in the thread
+      const messages = (await thread.messages.fetch()).sort(
+        (userA, userB) => userA.createdTimestamp - userB.createdTimestamp
+      );
+      const firstMessage = messages.at(0);
+      const secondMessage = messages.at(1);
+      const thirdMessage = messages.at(2);
 
       // First message is filename
       const fileName = firstMessage ? firstMessage.content : "Unknown";
@@ -126,12 +137,23 @@ export const fetchFolderDetails = async (textChannelID: string) => {
 
       totalFileSize += fileSize;
 
-      files.push({
+      // Third message is preview image, if available will only have 1 attachment
+      const previewUrl = thirdMessage
+        ? thirdMessage.attachments.first()?.url
+        : null;
+
+      const file: File = {
         fileID: thread.id,
         fileName: fileName,
         fileSize: fileSize,
         dateCreated: thread.createdAt,
-      });
+      };
+
+      if (previewUrl) {
+        file.previewUrl = previewUrl;
+      }
+
+      files.push(file);
     } catch (error) {
       console.error(
         `Failed to fetch messages for thread ${thread.id}: ${error}`
