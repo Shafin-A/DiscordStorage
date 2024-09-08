@@ -8,13 +8,14 @@ import {
   getLatestDate,
   sortItems,
 } from "@/lib/utils";
-import { Folder, File, SortOptions } from "@/interfaces";
+import { Folder, File, SortOptions, Dialogs } from "@/interfaces";
 import { useEffect, useState } from "react";
 import {
   Download,
   Eye,
   Folder as FolderIcon,
   FolderOpen,
+  Trash,
 } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -25,14 +26,9 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "./components/ui/context-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./components/ui/dialog";
+import { Dialog, DialogTrigger } from "./components/ui/dialog";
+import PreviewDialogContent from "./components/ui/preview-dialog";
+import DeleteFileDialogContent from "./components/ui/delete-file-dialog";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -44,6 +40,8 @@ const App = () => {
   const [cardContextMenuOpen, setCardContextMenuOpen] = useState<string | null>(
     null
   );
+
+  const [dialog, setDialog] = useState<Dialogs>();
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
@@ -276,7 +274,10 @@ const App = () => {
                       </ContextMenuLabel>
                       <ContextMenuSeparator />
                       {file.previewUrl && (
-                        <DialogTrigger asChild>
+                        <DialogTrigger
+                          asChild
+                          onClick={() => setDialog(Dialogs.previewDialog)}
+                        >
                           <ContextMenuItem>
                             <Eye size={16} className="mr-3" />
                             Preview File
@@ -297,22 +298,25 @@ const App = () => {
                         <Download size={16} className="mr-3" />
                         Download File
                       </ContextMenuItem>
+                      <DialogTrigger
+                        asChild
+                        onClick={() => setDialog(Dialogs.deleteFileDialog)}
+                      >
+                        <ContextMenuItem>
+                          <Trash size={16} className="mr-3" />
+                          Delete File
+                        </ContextMenuItem>
+                      </DialogTrigger>
                     </ContextMenuContent>
                   </ContextMenu>
-                  <DialogContent className="max-w-7xl border-0 bg-transparent p-0">
-                    <DialogHeader>
-                      <DialogTitle className="text-zinc-50 mt-[0.9rem]">
-                        {file.fileName}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <DialogDescription>
-                      <img
-                        src={file.previewUrl}
-                        className="h-full w-full object-contain"
-                        alt={`Preview for file ${file.fileName}`}
-                      />
-                    </DialogDescription>
-                  </DialogContent>
+                  {dialog === Dialogs.previewDialog ? (
+                    <PreviewDialogContent file={file} />
+                  ) : (
+                    <DeleteFileDialogContent
+                      folder={selectedFolder}
+                      file={file}
+                    />
+                  )}
                 </Dialog>
               ))
             : sortedFolders.map((folder: Folder) => (
