@@ -25,6 +25,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "./components/ui/context-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/ui/dialog";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -198,95 +206,114 @@ const App = () => {
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
             ? sortedFiles.map((file: File) => (
-                <ContextMenu
-                  key={file.fileID}
-                  onOpenChange={() => {
-                    if (cardContextMenuOpen === null) {
-                      setCardContextMenuOpen(file.fileID);
-                    } else {
-                      setCardContextMenuOpen(null);
-                    }
-                  }}
-                >
-                  <ContextMenuTrigger disabled={progress[file.fileID] > 0}>
-                    <Card
-                      className={`h-full group hover:scale-105 ${
-                        progress[file.fileID] > 0
-                          ? "cursor-not-allowed"
-                          : "cursor-pointer"
-                      } dark:bg-zinc-900`}
-                      style={{
-                        scale:
-                          cardContextMenuOpen === file.fileID ? "1.05" : "",
-                      }}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                <Dialog key={file.fileID}>
+                  <ContextMenu
+                    onOpenChange={() => {
+                      if (cardContextMenuOpen === null) {
+                        setCardContextMenuOpen(file.fileID);
+                      } else {
+                        setCardContextMenuOpen(null);
+                      }
+                    }}
+                  >
+                    <ContextMenuTrigger disabled={progress[file.fileID] > 0}>
+                      <Card
+                        className={`h-full group hover:scale-105 ${
+                          progress[file.fileID] > 0
+                            ? "cursor-not-allowed"
+                            : "cursor-pointer"
+                        } dark:bg-zinc-900`}
+                        style={{
+                          scale:
+                            cardContextMenuOpen === file.fileID ? "1.05" : "",
+                        }}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            (!(file.fileID in progress) ||
+                              progress[file.fileID] === 0) &&
+                              handleFileDownload(
+                                selectedFolder.id,
+                                file.fileID,
+                                file.fileName
+                              );
+                          }
+                        }}
+                        onClick={() =>
                           (!(file.fileID in progress) ||
                             progress[file.fileID] === 0) &&
-                            handleFileDownload(
-                              selectedFolder.id,
-                              file.fileID,
-                              file.fileName
-                            );
+                          handleFileDownload(
+                            selectedFolder.id,
+                            file.fileID,
+                            file.fileName
+                          )
                         }
-                      }}
-                      onClick={() =>
-                        (!(file.fileID in progress) ||
-                          progress[file.fileID] === 0) &&
-                        handleFileDownload(
-                          selectedFolder.id,
-                          file.fileID,
-                          file.fileName
-                        )
-                      }
-                    >
-                      <div className="flex items-center justify-center p-4">
-                        {getFileIcon(file.fileName)}
-                      </div>
-                      <CardContent className="flex flex-col items-start gap-1">
-                        <h3 className="text-base font-medium">
+                      >
+                        <div className="flex items-center justify-center p-4">
+                          {getFileIcon(file.fileName)}
+                        </div>
+                        <CardContent className="flex flex-col items-start gap-1">
+                          <h3 className="text-base font-medium">
+                            {file.fileName}
+                          </h3>
+                          <div className="text-sm text-muted-foreground">
+                            {convertBytes(file.fileSize)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Modified: {getLatestDate([file])}
+                          </div>
+                          {progress[file.fileID] > 0 && (
+                            <Progress value={progress[file.fileID]} />
+                          )}
+                        </CardContent>
+                      </Card>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuLabel>
+                        <span className="block max-w-[200px] truncate">
                           {file.fileName}
-                        </h3>
-                        <div className="text-sm text-muted-foreground">
-                          {convertBytes(file.fileSize)}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Modified: {getLatestDate([file])}
-                        </div>
-                        {progress[file.fileID] > 0 && (
-                          <Progress value={progress[file.fileID]} />
-                        )}
-                      </CardContent>
-                    </Card>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent>
-                    <ContextMenuLabel>
-                      <span className="block max-w-[200px] truncate">
+                        </span>
+                      </ContextMenuLabel>
+                      <ContextMenuSeparator />
+                      {file.previewUrl && (
+                        <DialogTrigger asChild>
+                          <ContextMenuItem>
+                            <Eye size={16} className="mr-3" />
+                            Preview File
+                          </ContextMenuItem>
+                        </DialogTrigger>
+                      )}
+                      <ContextMenuItem
+                        onClick={() =>
+                          (!(file.fileID in progress) ||
+                            progress[file.fileID] === 0) &&
+                          handleFileDownload(
+                            selectedFolder.id,
+                            file.fileID,
+                            file.fileName
+                          )
+                        }
+                      >
+                        <Download size={16} className="mr-3" />
+                        Download File
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
+                  <DialogContent className="max-w-7xl border-0 bg-transparent p-0">
+                    <DialogHeader>
+                      <DialogTitle className="text-zinc-50 mt-[0.9rem]">
                         {file.fileName}
-                      </span>
-                    </ContextMenuLabel>
-                    <ContextMenuSeparator />
-                    <ContextMenuItem>
-                      <Eye size={16} className="mr-3" />
-                      Preview File
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() =>
-                        (!(file.fileID in progress) ||
-                          progress[file.fileID] === 0) &&
-                        handleFileDownload(
-                          selectedFolder.id,
-                          file.fileID,
-                          file.fileName
-                        )
-                      }
-                    >
-                      <Download size={16} className="mr-3" />
-                      Download File
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
+                      </DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription>
+                      <img
+                        src={file.previewUrl}
+                        className="h-full w-full object-contain"
+                        alt={`Preview for file ${file.fileName}`}
+                      />
+                    </DialogDescription>
+                  </DialogContent>
+                </Dialog>
               ))
             : sortedFolders.map((folder: Folder) => (
                 <ContextMenu

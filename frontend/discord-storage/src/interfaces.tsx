@@ -10,6 +10,7 @@ export interface File {
   fileName: string;
   fileSize: number;
   dateCreated: string;
+  previewUrl?: string;
 }
 
 export type SortOptions = "Name" | "Size" | "Date";
