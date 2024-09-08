@@ -271,7 +271,17 @@ const App = () => {
                       <Eye size={16} className="mr-3" />
                       Preview File
                     </ContextMenuItem>
-                    <ContextMenuItem>
+                    <ContextMenuItem
+                      onClick={() =>
+                        (!(file.fileID in progress) ||
+                          progress[file.fileID] === 0) &&
+                        handleFileDownload(
+                          selectedFolder.id,
+                          file.fileID,
+                          file.fileName
+                        )
+                      }
+                    >
                       <Download size={16} className="mr-3" />
                       Download File
                     </ContextMenuItem>
@@ -326,7 +336,7 @@ const App = () => {
                         </span>
                       </ContextMenuLabel>
                       <ContextMenuSeparator />
-                      <ContextMenuItem>
+                      <ContextMenuItem onClick={() => handleCardClick(folder)}>
                         <FolderOpen size={16} className="mr-3" />
                         Open Folder
                       </ContextMenuItem>
