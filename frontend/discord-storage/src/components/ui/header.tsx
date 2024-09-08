@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({
   handleSortChange,
 }) => {
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b dark:border-gray-600 dark:bg-zinc-950 px-4 sm:px-6 rounded-md">
+    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-zinc-50 dark:border-gray-600 dark:bg-zinc-950 px-4 sm:px-6 rounded-md">
       {breadcrumbs.length > 0 ? (
         <Breadcrumb>
           <BreadcrumbList>
