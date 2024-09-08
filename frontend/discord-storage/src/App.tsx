@@ -33,6 +33,10 @@ const App = () => {
   const [sortOption, setSortOption] = useState<SortOptions>("Name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
+  const [cardContextMenuOpen, setCardContextMenuOpen] = useState<string | null>(
+    null
+  );
+
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
     socket.addEventListener("message", (event) => {
@@ -194,14 +198,27 @@ const App = () => {
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
             ? sortedFiles.map((file: File) => (
-                <ContextMenu key={file.fileID}>
-                  <ContextMenuTrigger>
+                <ContextMenu
+                  key={file.fileID}
+                  onOpenChange={() => {
+                    if (cardContextMenuOpen === null) {
+                      setCardContextMenuOpen(file.fileID);
+                    } else {
+                      setCardContextMenuOpen(null);
+                    }
+                  }}
+                >
+                  <ContextMenuTrigger disabled={progress[file.fileID] > 0}>
                     <Card
                       className={`h-full group hover:scale-105 ${
                         progress[file.fileID] > 0
                           ? "cursor-not-allowed"
                           : "cursor-pointer"
                       } dark:bg-zinc-900`}
+                      style={{
+                        scale:
+                          cardContextMenuOpen === file.fileID ? "1.05" : "",
+                      }}
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -262,10 +279,22 @@ const App = () => {
                 </ContextMenu>
               ))
             : sortedFolders.map((folder: Folder) => (
-                <ContextMenu key={folder.id}>
+                <ContextMenu
+                  key={folder.id}
+                  onOpenChange={() => {
+                    if (cardContextMenuOpen === null) {
+                      setCardContextMenuOpen(folder.id);
+                    } else {
+                      setCardContextMenuOpen(null);
+                    }
+                  }}
+                >
                   <ContextMenuTrigger>
                     <Card
                       className="h-full group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                      style={{
+                        scale: cardContextMenuOpen === folder.id ? "1.05" : "",
+                      }}
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
