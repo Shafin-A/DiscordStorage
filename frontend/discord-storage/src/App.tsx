@@ -10,8 +10,21 @@ import {
 } from "@/lib/utils";
 import { Folder, File, SortOptions } from "@/interfaces";
 import { useEffect, useState } from "react";
-import { Folder as FolderIcon } from "@phosphor-icons/react";
+import {
+  Download,
+  Eye,
+  Folder as FolderIcon,
+  FolderOpen,
+} from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "./components/ui/context-menu";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -181,80 +194,116 @@ const App = () => {
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
             ? sortedFiles.map((file: File) => (
-                <Card
-                  key={file.fileID}
-                  className={`group hover:scale-105 ${
-                    progress[file.fileID] > 0
-                      ? "cursor-not-allowed"
-                      : "cursor-pointer"
-                  } dark:bg-zinc-900`}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      (!(file.fileID in progress) ||
-                        progress[file.fileID] === 0) &&
+                <ContextMenu key={file.fileID}>
+                  <ContextMenuTrigger>
+                    <Card
+                      className={`h-full group hover:scale-105 ${
+                        progress[file.fileID] > 0
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer"
+                      } dark:bg-zinc-900`}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          (!(file.fileID in progress) ||
+                            progress[file.fileID] === 0) &&
+                            handleFileDownload(
+                              selectedFolder.id,
+                              file.fileID,
+                              file.fileName
+                            );
+                        }
+                      }}
+                      onClick={() =>
+                        (!(file.fileID in progress) ||
+                          progress[file.fileID] === 0) &&
                         handleFileDownload(
                           selectedFolder.id,
                           file.fileID,
                           file.fileName
-                        );
-                    }
-                  }}
-                  onClick={() =>
-                    (!(file.fileID in progress) ||
-                      progress[file.fileID] === 0) &&
-                    handleFileDownload(
-                      selectedFolder.id,
-                      file.fileID,
-                      file.fileName
-                    )
-                  }
-                >
-                  <div className="flex items-center justify-center p-4">
-                    {getFileIcon(file.fileName)}
-                  </div>
-                  <CardContent className="flex flex-col items-start gap-1">
-                    <h3 className="text-base font-medium">{file.fileName}</h3>
-                    <div className="text-sm text-muted-foreground">
-                      {convertBytes(file.fileSize)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Modified: {getLatestDate([file])}
-                    </div>
-                    {progress[file.fileID] > 0 && (
-                      <Progress value={progress[file.fileID]} />
-                    )}
-                  </CardContent>
-                </Card>
+                        )
+                      }
+                    >
+                      <div className="flex items-center justify-center p-4">
+                        {getFileIcon(file.fileName)}
+                      </div>
+                      <CardContent className="flex flex-col items-start gap-1">
+                        <h3 className="text-base font-medium">
+                          {file.fileName}
+                        </h3>
+                        <div className="text-sm text-muted-foreground">
+                          {convertBytes(file.fileSize)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Modified: {getLatestDate([file])}
+                        </div>
+                        {progress[file.fileID] > 0 && (
+                          <Progress value={progress[file.fileID]} />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuLabel>
+                      <span className="block max-w-[200px] truncate">
+                        {file.fileName}
+                      </span>
+                    </ContextMenuLabel>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem>
+                      <Eye size={16} className="mr-3" />
+                      Preview File
+                    </ContextMenuItem>
+                    <ContextMenuItem>
+                      <Download size={16} className="mr-3" />
+                      Download File
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               ))
             : sortedFolders.map((folder: Folder) => (
-                <Card
-                  key={folder.id}
-                  className="group hover:scale-105 cursor-pointer dark:bg-zinc-900"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleCardClick(folder);
-                    }
-                  }}
-                  onClick={() => handleCardClick(folder)}
-                >
-                  <div className="flex items-center justify-center p-4">
-                    <FolderIcon size={48} />
-                  </div>
-                  <CardContent className="flex flex-col items-start gap-1">
-                    <h3 className="text-base font-medium">
-                      {folder.folderName}
-                    </h3>
-                    <div className="text-sm text-muted-foreground">
-                      {folder.files.length} item(s),{" "}
-                      {convertBytes(folder.folderSize)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Modified: {getLatestDate(folder.files)}
-                    </div>
-                  </CardContent>
-                </Card>
+                <ContextMenu key={folder.id}>
+                  <ContextMenuTrigger>
+                    <Card
+                      className="h-full group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleCardClick(folder);
+                        }
+                      }}
+                      onClick={() => handleCardClick(folder)}
+                    >
+                      <div className="flex items-center justify-center p-4">
+                        <FolderIcon size={48} />
+                      </div>
+                      <CardContent className="flex flex-col items-start gap-1">
+                        <h3 className="text-base font-medium">
+                          {folder.folderName}
+                        </h3>
+                        <div className="text-sm text-muted-foreground">
+                          {folder.files.length} item(s),{" "}
+                          {convertBytes(folder.folderSize)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Modified: {getLatestDate(folder.files)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <ContextMenuContent>
+                      <ContextMenuLabel>
+                        <span className="block max-w-[200px] truncate">
+                          {folder.folderName}
+                        </span>
+                      </ContextMenuLabel>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem>
+                        <FolderOpen size={16} className="mr-3" />
+                        Open Folder
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenuTrigger>
+                </ContextMenu>
               ))}
         </main>
       </div>
