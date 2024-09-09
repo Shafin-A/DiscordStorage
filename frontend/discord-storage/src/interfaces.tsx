@@ -18,4 +18,6 @@ export type SortOptions = "Name" | "Size" | "Date";
 export enum Dialogs {
   previewDialog,
   deleteFileDialog,
+  deleteFolderDialog,
+  renameFolderDialog,
 }

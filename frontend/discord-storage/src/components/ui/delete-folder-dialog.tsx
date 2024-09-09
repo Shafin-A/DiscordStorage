@@ -6,43 +6,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./dialog";
-import { File, Folder } from "@/interfaces";
+import { Folder } from "@/interfaces";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type DeleteDialogContentProps = {
   folder: Folder;
-  file: File;
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const DeleteFileDialogContent: React.FC<DeleteDialogContentProps> = ({
+const DeleteFolderDialogContent: React.FC<DeleteDialogContentProps> = ({
   folder,
-  file,
   setDialogOpen,
 }) => {
-  const deleteFile = async () => {
-    const response = await fetch(
-      `http://localhost:3000/folder/${folder.id}/file/${file.fileID}`,
-      {
-        method: "DELETE",
-      }
-    );
+  const deleteFolder = async () => {
+    const response = await fetch(`http://localhost:3000/folder/${folder.id}`, {
+      method: "DELETE",
+    });
 
     if (!response.ok) {
-      throw new Error("Failed to delete the file");
+      throw new Error("Failed to delete the folder");
     }
   };
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: deleteFile,
+    mutationFn: deleteFolder,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["foldersData"] });
       setDialogOpen(false);
     },
   });
 
-  const handleDeleteFile = () => {
+  const handleDeleteFolder = () => {
     mutation.mutate();
   };
 
@@ -52,13 +47,13 @@ const DeleteFileDialogContent: React.FC<DeleteDialogContentProps> = ({
         <DialogTitle>Are you absolutely sure?</DialogTitle>
         <DialogDescription>
           This action cannot be undone. Are you sure you want to permanently
-          delete the file "{file.fileName}" from our servers?
+          delete the folder "{folder.folderName}" from our servers?
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button
           type="submit"
-          onClick={handleDeleteFile}
+          onClick={handleDeleteFolder}
           disabled={mutation.isPending}
         >
           {mutation.isPending ? "Deleting..." : "Confirm"}
@@ -68,4 +63,4 @@ const DeleteFileDialogContent: React.FC<DeleteDialogContentProps> = ({
   );
 };
 
-export default DeleteFileDialogContent;
+export default DeleteFolderDialogContent;

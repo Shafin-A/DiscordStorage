@@ -16,6 +16,7 @@ import {
   Eye,
   Folder as FolderIcon,
   FolderOpen,
+  Pencil,
   Trash,
 } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
@@ -30,6 +31,8 @@ import {
 import { Dialog, DialogTrigger } from "./components/ui/dialog";
 import PreviewDialogContent from "./components/ui/preview-dialog";
 import DeleteFileDialogContent from "./components/ui/delete-file-dialog";
+import DeleteFolderDialogContent from "./components/ui/delete-folder-dialog";
+import RenameFolderDialogContent from "./components/ui/rename-folder-dialog";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -42,7 +45,9 @@ const App = () => {
     null
   );
 
-  const [dialog, setDialog] = useState<Dialogs>();
+  const [dialog, setDialog] = useState<Dialogs | null>(null);
+
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
@@ -205,7 +210,11 @@ const App = () => {
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
             ? sortedFiles.map((file: File) => (
-                <Dialog key={file.fileID}>
+                <Dialog
+                  key={file.fileID}
+                  open={dialogOpen}
+                  onOpenChange={setDialogOpen}
+                >
                   <ContextMenu
                     onOpenChange={() => {
                       if (cardContextMenuOpen === null) {
@@ -312,69 +321,113 @@ const App = () => {
                   </ContextMenu>
                   {dialog === Dialogs.previewDialog ? (
                     <PreviewDialogContent file={file} />
-                  ) : (
+                  ) : dialog === Dialogs.deleteFileDialog ? (
                     <DeleteFileDialogContent
                       folder={selectedFolder}
                       file={file}
+                      setDialogOpen={setDialogOpen}
                     />
+                  ) : (
+                    <></>
                   )}
                 </Dialog>
               ))
             : sortedFolders.map((folder: Folder) => (
-                <ContextMenu
+                <Dialog
                   key={folder.id}
-                  onOpenChange={() => {
-                    if (cardContextMenuOpen === null) {
-                      setCardContextMenuOpen(folder.id);
-                    } else {
-                      setCardContextMenuOpen(null);
-                    }
-                  }}
+                  open={dialogOpen}
+                  onOpenChange={setDialogOpen}
                 >
-                  <ContextMenuTrigger>
-                    <Card
-                      className="h-full group hover:scale-105 cursor-pointer dark:bg-zinc-900"
-                      style={{
-                        scale: cardContextMenuOpen === folder.id ? "1.05" : "",
-                      }}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleCardClick(folder);
-                        }
-                      }}
-                      onClick={() => handleCardClick(folder)}
-                    >
-                      <div className="flex items-center justify-center p-4">
-                        <FolderIcon size={48} />
-                      </div>
-                      <CardContent className="flex flex-col items-start gap-1">
-                        <h3 className="text-base font-medium">
-                          {folder.folderName}
-                        </h3>
-                        <div className="text-sm text-muted-foreground">
-                          {folder.files.length} item(s),{" "}
-                          {convertBytes(folder.folderSize)}
+                  <ContextMenu
+                    onOpenChange={() => {
+                      if (cardContextMenuOpen === null) {
+                        setCardContextMenuOpen(folder.id);
+                      } else {
+                        setCardContextMenuOpen(null);
+                      }
+                    }}
+                  >
+                    <ContextMenuTrigger>
+                      <Card
+                        className="h-full group hover:scale-105 cursor-pointer dark:bg-zinc-900"
+                        style={{
+                          scale:
+                            cardContextMenuOpen === folder.id ? "1.05" : "",
+                        }}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleCardClick(folder);
+                          }
+                        }}
+                        onClick={() => handleCardClick(folder)}
+                      >
+                        <div className="flex items-center justify-center p-4">
+                          <FolderIcon size={48} />
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Modified: {relativeTime(getLatestDate(folder.files))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <ContextMenuContent>
-                      <ContextMenuLabel>
-                        <span className="block max-w-[200px] truncate">
-                          {folder.folderName}
-                        </span>
-                      </ContextMenuLabel>
-                      <ContextMenuSeparator />
-                      <ContextMenuItem onClick={() => handleCardClick(folder)}>
-                        <FolderOpen size={16} className="mr-3" />
-                        Open Folder
-                      </ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenuTrigger>
-                </ContextMenu>
+                        <CardContent className="flex flex-col items-start gap-1">
+                          <h3 className="text-base font-medium">
+                            {folder.folderName}
+                          </h3>
+                          <div className="text-sm text-muted-foreground">
+                            {folder.files.length} item(s),{" "}
+                            {convertBytes(folder.folderSize)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Modified:{" "}
+                            {folder.files.length > 0 &&
+                              relativeTime(getLatestDate(folder.files))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <ContextMenuContent>
+                        <ContextMenuLabel>
+                          <span className="block max-w-[200px] truncate">
+                            {folder.folderName}
+                          </span>
+                        </ContextMenuLabel>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem
+                          onClick={() => handleCardClick(folder)}
+                        >
+                          <FolderOpen size={16} className="mr-3" />
+                          Open Folder
+                        </ContextMenuItem>
+                        <DialogTrigger
+                          asChild
+                          onClick={() => setDialog(Dialogs.renameFolderDialog)}
+                        >
+                          <ContextMenuItem>
+                            <Pencil size={16} className="mr-3" />
+                            Rename Folder
+                          </ContextMenuItem>
+                        </DialogTrigger>
+                        <DialogTrigger
+                          asChild
+                          onClick={() => setDialog(Dialogs.deleteFolderDialog)}
+                        >
+                          <ContextMenuItem>
+                            <Trash size={16} className="mr-3" />
+                            Delete Folder
+                          </ContextMenuItem>
+                        </DialogTrigger>
+                      </ContextMenuContent>
+                    </ContextMenuTrigger>
+                  </ContextMenu>
+                  {dialog === Dialogs.deleteFolderDialog ? (
+                    <DeleteFolderDialogContent
+                      folder={folder}
+                      setDialogOpen={setDialogOpen}
+                    />
+                  ) : dialog === Dialogs.renameFolderDialog ? (
+                    <RenameFolderDialogContent
+                      folder={folder}
+                      setDialogOpen={setDialogOpen}
+                    />
+                  ) : (
+                    <></>
+                  )}
+                </Dialog>
               ))}
         </main>
       </div>
