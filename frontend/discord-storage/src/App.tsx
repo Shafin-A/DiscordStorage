@@ -29,10 +29,12 @@ import {
   ContextMenuTrigger,
 } from "./components/ui/context-menu";
 import { Dialog, DialogTrigger } from "./components/ui/dialog";
-import PreviewDialogContent from "./components/ui/preview-dialog";
-import DeleteFileDialogContent from "./components/ui/delete-file-dialog";
-import DeleteFolderDialogContent from "./components/ui/delete-folder-dialog";
-import RenameFolderDialogContent from "./components/ui/rename-folder-dialog";
+import {
+  PreviewDialogContent,
+  DeleteFileDialogContent,
+  DeleteFolderDialogContent,
+  RenameFolderDialogContent,
+} from "@/components/ui/dialogs";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);

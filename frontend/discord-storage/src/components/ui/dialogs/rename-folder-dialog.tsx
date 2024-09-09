@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Button } from "./button";
+import { Button } from "../button";
 import {
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./dialog";
+} from "../dialog";
 import { Folder } from "@/interfaces";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Input } from "./input";
+import { Input } from "../input";
 
 type RenameDialogContentProps = {
   folder: Folder;
