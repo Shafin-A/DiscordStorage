@@ -16,7 +16,7 @@ import {
   createPreviewBuffer,
   createThreadAndSendChunks,
   fetchFolderDetails,
-  loginDiscord,
+  getDiscordClient,
   streamFile,
 } from "./helpers";
 
@@ -42,7 +42,7 @@ wss.on("connection", (_ws) => {
 // Create new folder
 app.post("/folder/:folderName", async (req, res) => {
   try {
-    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const client = await getDiscordClient();
     const guildID = process.env.GUILD_ID!;
     const guild = client.guilds.cache.get(guildID);
 
@@ -76,7 +76,7 @@ app.post("/folder/:folderName", async (req, res) => {
 // Delete folder
 app.delete("/folder/:folderID", async (req, res) => {
   try {
-    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const client = await getDiscordClient();
     const textChannelID = req.params.folderID;
 
     // Get text channel
@@ -115,7 +115,7 @@ app.patch("/folder/:folderID", async (req, res) => {
   */
   try {
     const textChannelID = req.params.folderID;
-    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const client = await getDiscordClient();
 
     // Get text channel
     const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
@@ -165,7 +165,7 @@ app.get("/folder/:folderID", async (req, res) => {
 // Get all folders
 app.get("/folders", async (_req, res) => {
   try {
-    const client = await loginDiscord([GatewayIntentBits.Guilds]);
+    const client = await getDiscordClient();
     const guildID = process.env.GUILD_ID!;
     const guild = client.guilds.cache.get(guildID);
 
@@ -208,10 +208,7 @@ app.delete("/folder/:folderID/file/:fileID", async (req, res) => {
     const textChannelID = req.params.folderID;
     const threadID = req.params.fileID;
 
-    const client = await loginDiscord([
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.MessageContent,
-    ]);
+    const client = await getDiscordClient();
 
     const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
 
@@ -250,10 +247,7 @@ app.get("/download/:folderID/:fileID", async (req, res) => {
   const textChannelID = req.params.folderID;
   const threadID = req.params.fileID;
 
-  const client = await loginDiscord([
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.MessageContent,
-  ]);
+  const client = await getDiscordClient();
 
   // Get text channel - Folder
   const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
@@ -424,7 +418,7 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
 
   const textChannelID = req.params.folderID;
 
-  const client = await loginDiscord([GatewayIntentBits.Guilds]);
+  const client = await getDiscordClient();
 
   // Get text channel - Folder
   const channel = (await client.channels.fetch(textChannelID)) as TextChannel;

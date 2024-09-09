@@ -1,6 +1,5 @@
 import {
   Client,
-  ClientOptions,
   GatewayIntentBits,
   TextChannel,
   ThreadAutoArchiveDuration,
@@ -76,22 +75,23 @@ export const streamFile = async (
   }
 };
 
-export const loginDiscord = async (intents: ClientOptions["intents"][]) => {
-  // Login to Discord bot
-  const client = new Client({
-    intents: intents,
-  });
-  const token = process.env.DISCORD_TOKEN;
-  await client.login(token);
+let discordClient: Client<boolean> | null = null; // Global client
 
-  return client;
+export const getDiscordClient = async () => {
+  if (!discordClient) {
+    discordClient = new Client({
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent],
+    });
+
+    const token = process.env.DISCORD_TOKEN;
+    await discordClient.login(token);
+  }
+
+  return discordClient;
 };
 
 export const fetchFolderDetails = async (textChannelID: string) => {
-  const client = await loginDiscord([
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.MessageContent,
-  ]);
+  const client = await getDiscordClient();
 
   // Get text channel
   const channel = (await client.channels.fetch(textChannelID)) as TextChannel;
