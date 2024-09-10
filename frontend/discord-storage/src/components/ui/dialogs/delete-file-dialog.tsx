@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { Button } from "../button";
 import {
   DialogContent,
@@ -39,6 +40,10 @@ const DeleteFileDialogContent: React.FC<DeleteDialogContentProps> = ({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["foldersData"] });
       setDialogOpen(false);
+      toast.success("File has been successfully deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message, { duration: Infinity });
     },
   });
 

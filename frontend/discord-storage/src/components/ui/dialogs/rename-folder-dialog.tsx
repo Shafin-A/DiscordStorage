@@ -10,6 +10,7 @@ import {
 import { Folder } from "@/interfaces";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "../input";
+import { toast } from "sonner";
 
 type RenameDialogContentProps = {
   folder: Folder;
@@ -54,7 +55,7 @@ const RenameFolderDialogContent: React.FC<RenameDialogContentProps> = ({
     } catch (error: any) {
       if (error.name === "AbortError") {
         throw new Error(
-          "The request took too long and was aborted. Try again later"
+          "Folder renaming is taking longer than expected and may be rate-limited. Please try again later. The request will continue to process in the background."
         );
       } else {
         throw error;
@@ -68,9 +69,10 @@ const RenameFolderDialogContent: React.FC<RenameDialogContentProps> = ({
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["foldersData"] });
       setDialogOpen(false);
+      toast.success("Folder has been successfully renamed!");
     },
     onError: (error: Error) => {
-      alert(error.message);
+      toast.error(error.message, { duration: Infinity });
     },
   });
 

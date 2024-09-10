@@ -5,6 +5,7 @@ import { sortItems } from "@/lib/utils";
 import { Folder, File, SortOptions } from "@/interfaces";
 import { useEffect, useState } from "react";
 import { FolderCard, FileCard } from "@/components/ui/cards";
+import { Toaster } from "@/components/ui/sonner";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -189,6 +190,7 @@ const App = () => {
                   handleOpenFolder={handleOpenFolder}
                 />
               ))}
+          <Toaster richColors closeButton toastOptions={{}} />
         </main>
       </div>
     </div>
