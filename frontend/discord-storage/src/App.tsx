@@ -1,40 +1,10 @@
 import Sidebar from "@/components/ui/sidebar";
 import Header from "@/components/ui/header";
-import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import {
-  convertBytes,
-  getFileIcon,
-  getLatestDate,
-  relativeTime,
-  sortItems,
-} from "@/lib/utils";
-import { Folder, File, SortOptions, Dialogs } from "@/interfaces";
+import { sortItems } from "@/lib/utils";
+import { Folder, File, SortOptions } from "@/interfaces";
 import { useEffect, useState } from "react";
-import {
-  Download,
-  Eye,
-  Folder as FolderIcon,
-  FolderOpen,
-  Pencil,
-  Trash,
-} from "@phosphor-icons/react";
-import { Progress } from "@/components/ui/progress";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "./components/ui/context-menu";
-import { Dialog, DialogTrigger } from "./components/ui/dialog";
-import {
-  PreviewDialogContent,
-  DeleteFileDialogContent,
-  DeleteFolderDialogContent,
-  RenameFolderDialogContent,
-} from "@/components/ui/dialogs";
+import { FolderCard, FileCard } from "@/components/ui/cards";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -42,14 +12,6 @@ const App = () => {
 
   const [sortOption, setSortOption] = useState<SortOptions>("Name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
-  const [cardContextMenuOpen, setCardContextMenuOpen] = useState<string | null>(
-    null
-  );
-
-  const [dialog, setDialog] = useState<Dialogs | null>(null);
-
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000");
@@ -94,7 +56,7 @@ const App = () => {
 
   if (error) return "An error has occurred: " + error.message;
 
-  const handleCardClick = (folder: Folder) => {
+  const handleOpenFolder = (folder: Folder) => {
     setSelectedFolder(folder);
   };
 
@@ -212,224 +174,20 @@ const App = () => {
         <main className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {selectedFolder
             ? sortedFiles.map((file: File) => (
-                <Dialog
+                <FileCard
                   key={file.fileID}
-                  open={dialogOpen}
-                  onOpenChange={setDialogOpen}
-                >
-                  <ContextMenu
-                    onOpenChange={() => {
-                      if (cardContextMenuOpen === null) {
-                        setCardContextMenuOpen(file.fileID);
-                      } else {
-                        setCardContextMenuOpen(null);
-                      }
-                    }}
-                  >
-                    <ContextMenuTrigger disabled={progress[file.fileID] > 0}>
-                      <Card
-                        className={`h-full group hover:scale-105 ${
-                          progress[file.fileID] > 0
-                            ? "cursor-not-allowed"
-                            : "cursor-pointer"
-                        } dark:bg-zinc-900`}
-                        style={{
-                          scale:
-                            cardContextMenuOpen === file.fileID ? "1.05" : "",
-                        }}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            (!(file.fileID in progress) ||
-                              progress[file.fileID] === 0) &&
-                              handleFileDownload(
-                                selectedFolder.id,
-                                file.fileID,
-                                file.fileName
-                              );
-                          }
-                        }}
-                        onClick={() =>
-                          (!(file.fileID in progress) ||
-                            progress[file.fileID] === 0) &&
-                          handleFileDownload(
-                            selectedFolder.id,
-                            file.fileID,
-                            file.fileName
-                          )
-                        }
-                      >
-                        <div className="flex items-center justify-center p-4">
-                          {getFileIcon(file.fileName)}
-                        </div>
-                        <CardContent className="flex flex-col items-start gap-1">
-                          <h3 className="text-base font-medium">
-                            {file.fileName}
-                          </h3>
-                          <div className="text-sm text-muted-foreground">
-                            {convertBytes(file.fileSize)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Modified: {relativeTime(getLatestDate([file]))}
-                          </div>
-                          {progress[file.fileID] > 0 && (
-                            <Progress value={progress[file.fileID]} />
-                          )}
-                        </CardContent>
-                      </Card>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuLabel>
-                        <span className="block max-w-[200px] truncate">
-                          {file.fileName}
-                        </span>
-                      </ContextMenuLabel>
-                      <ContextMenuSeparator />
-                      {file.previewUrl && (
-                        <DialogTrigger
-                          asChild
-                          onClick={() => setDialog(Dialogs.previewDialog)}
-                        >
-                          <ContextMenuItem>
-                            <Eye size={16} className="mr-3" />
-                            Preview File
-                          </ContextMenuItem>
-                        </DialogTrigger>
-                      )}
-                      <ContextMenuItem
-                        onClick={() =>
-                          (!(file.fileID in progress) ||
-                            progress[file.fileID] === 0) &&
-                          handleFileDownload(
-                            selectedFolder.id,
-                            file.fileID,
-                            file.fileName
-                          )
-                        }
-                      >
-                        <Download size={16} className="mr-3" />
-                        Download File
-                      </ContextMenuItem>
-                      <DialogTrigger
-                        asChild
-                        onClick={() => setDialog(Dialogs.deleteFileDialog)}
-                      >
-                        <ContextMenuItem>
-                          <Trash size={16} className="mr-3" />
-                          Delete File
-                        </ContextMenuItem>
-                      </DialogTrigger>
-                    </ContextMenuContent>
-                  </ContextMenu>
-                  {dialog === Dialogs.previewDialog ? (
-                    <PreviewDialogContent file={file} />
-                  ) : dialog === Dialogs.deleteFileDialog ? (
-                    <DeleteFileDialogContent
-                      folder={selectedFolder}
-                      file={file}
-                      setDialogOpen={setDialogOpen}
-                    />
-                  ) : (
-                    <></>
-                  )}
-                </Dialog>
+                  folder={selectedFolder}
+                  file={file}
+                  handleFileDownload={handleFileDownload}
+                  progress={progress[file.fileID]}
+                />
               ))
             : sortedFolders.map((folder: Folder) => (
-                <Dialog
+                <FolderCard
                   key={folder.id}
-                  open={dialogOpen}
-                  onOpenChange={setDialogOpen}
-                >
-                  <ContextMenu
-                    onOpenChange={() => {
-                      if (cardContextMenuOpen === null) {
-                        setCardContextMenuOpen(folder.id);
-                      } else {
-                        setCardContextMenuOpen(null);
-                      }
-                    }}
-                  >
-                    <ContextMenuTrigger>
-                      <Card
-                        className="h-full group hover:scale-105 cursor-pointer dark:bg-zinc-900"
-                        style={{
-                          scale:
-                            cardContextMenuOpen === folder.id ? "1.05" : "",
-                        }}
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleCardClick(folder);
-                          }
-                        }}
-                        onClick={() => handleCardClick(folder)}
-                      >
-                        <div className="flex items-center justify-center p-4">
-                          <FolderIcon size={48} />
-                        </div>
-                        <CardContent className="flex flex-col items-start gap-1">
-                          <h3 className="text-base font-medium">
-                            {folder.folderName}
-                          </h3>
-                          <div className="text-sm text-muted-foreground">
-                            {folder.files.length} item(s),{" "}
-                            {convertBytes(folder.folderSize)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Modified:{" "}
-                            {folder.files.length > 0 &&
-                              relativeTime(getLatestDate(folder.files))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <ContextMenuContent>
-                        <ContextMenuLabel>
-                          <span className="block max-w-[200px] truncate">
-                            {folder.folderName}
-                          </span>
-                        </ContextMenuLabel>
-                        <ContextMenuSeparator />
-                        <ContextMenuItem
-                          onClick={() => handleCardClick(folder)}
-                        >
-                          <FolderOpen size={16} className="mr-3" />
-                          Open Folder
-                        </ContextMenuItem>
-                        <DialogTrigger
-                          asChild
-                          onClick={() => setDialog(Dialogs.renameFolderDialog)}
-                        >
-                          <ContextMenuItem>
-                            <Pencil size={16} className="mr-3" />
-                            Rename Folder
-                          </ContextMenuItem>
-                        </DialogTrigger>
-                        <DialogTrigger
-                          asChild
-                          onClick={() => setDialog(Dialogs.deleteFolderDialog)}
-                        >
-                          <ContextMenuItem>
-                            <Trash size={16} className="mr-3" />
-                            Delete Folder
-                          </ContextMenuItem>
-                        </DialogTrigger>
-                      </ContextMenuContent>
-                    </ContextMenuTrigger>
-                  </ContextMenu>
-                  {dialog === Dialogs.deleteFolderDialog ? (
-                    <DeleteFolderDialogContent
-                      folder={folder}
-                      setDialogOpen={setDialogOpen}
-                    />
-                  ) : dialog === Dialogs.renameFolderDialog ? (
-                    <RenameFolderDialogContent
-                      folder={folder}
-                      setDialogOpen={setDialogOpen}
-                    />
-                  ) : (
-                    <></>
-                  )}
-                </Dialog>
+                  folder={folder}
+                  handleOpenFolder={handleOpenFolder}
+                />
               ))}
         </main>
       </div>
