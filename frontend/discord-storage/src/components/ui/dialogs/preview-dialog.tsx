@@ -3,7 +3,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "../dialog";
+} from "@/components/ui/dialog";
 import { File } from "@/interfaces";
 
 type PreviewDialogContentProps = {

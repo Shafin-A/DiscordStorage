@@ -1,12 +1,12 @@
 import { toast } from "sonner";
-import { Button } from "../button";
+import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../dialog";
+} from "@/components/ui/dialog";
 import { File, Folder } from "@/interfaces";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

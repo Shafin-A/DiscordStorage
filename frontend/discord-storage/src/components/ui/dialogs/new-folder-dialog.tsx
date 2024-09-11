@@ -7,86 +7,64 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Folder } from "@/interfaces";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
-type RenameDialogContentProps = {
-  folder: Folder;
+type NewFolderDialogContentProps = {
   setDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const RenameFolderDialogContent: React.FC<RenameDialogContentProps> = ({
-  folder,
+const NewFolderDialogContent: React.FC<NewFolderDialogContentProps> = ({
   setDialogOpen,
 }) => {
   const [inputValue, setInputValue] = useState<string>("");
 
-  const renameFolder = async (newName: string) => {
-    const controller = new AbortController();
-
-    // Abort request after 10 seconds
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 10000);
-
+  const createNewFolder = async (folderName: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/folder/${folder.id}`,
+        `http://localhost:3000/folder/${folderName}`,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ newName }),
-          signal: controller.signal,
+          method: "POST",
         }
       );
 
-      // Clear the timeout once the request is complete
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
-        throw new Error("Failed to rename the folder");
+        throw new Error("Failed to create new folder");
       }
 
       return response;
     } catch (error: any) {
-      if (error.name === "AbortError") {
-        throw new Error(
-          "Folder renaming is taking longer than expected and may be rate-limited. Please try again later. The request will continue to process in the background."
-        );
-      } else {
-        throw error;
-      }
+      throw error;
     }
   };
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: renameFolder,
+    mutationFn: createNewFolder,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["foldersData"] });
       setDialogOpen(false);
-      toast.success("Folder has been successfully renamed!");
+      toast.success(
+        "Folder has been successfully created in the Home directory!"
+      );
     },
     onError: (error: Error) => {
       toast.error(error.message, { duration: Infinity });
     },
   });
 
-  const handleRenameFolder = (newName: string) => {
+  const handleNewFolder = (folderName: string) => {
     setInputValue("");
-    mutation.mutate(newName);
+    mutation.mutate(folderName);
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogTitle>New Folder</DialogTitle>
         <DialogDescription>
-          This will rename the folder "{folder.folderName}".
+          This will create a new folder in the Home directory.
         </DialogDescription>
       </DialogHeader>
       <div>
@@ -100,14 +78,14 @@ const RenameFolderDialogContent: React.FC<RenameDialogContentProps> = ({
       <DialogFooter>
         <Button
           type="submit"
-          onClick={() => handleRenameFolder(inputValue)}
+          onClick={() => handleNewFolder(inputValue)}
           disabled={mutation.isPending || inputValue.length === 0}
         >
-          {mutation.isPending ? "Renaming..." : "Confirm"}
+          {mutation.isPending ? "Creating..." : "Confirm"}
         </Button>
       </DialogFooter>
     </DialogContent>
   );
 };
 
-export default RenameFolderDialogContent;
+export default NewFolderDialogContent;
