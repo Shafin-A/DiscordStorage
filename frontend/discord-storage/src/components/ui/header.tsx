@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import ModeToggle from "@/components/ui/modetoggle";
 import { SortOptions } from "@/interfaces";
-import SortDropdown from "./sortdropdown";
+import SortDropdown from "@/components/ui/sortdropdown";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type HeaderProps = {
   breadcrumbs?: { onClick: () => void; label: string }[];
@@ -17,6 +18,7 @@ type HeaderProps = {
   sortOption: SortOptions;
   sortOrder: "asc" | "desc";
   handleSortChange: (option: SortOptions, order: "asc" | "desc") => void;
+  isLoading: boolean;
 };
 
 const Header: React.FC<HeaderProps> = ({
@@ -25,6 +27,7 @@ const Header: React.FC<HeaderProps> = ({
   sortOption,
   sortOrder,
   handleSortChange,
+  isLoading,
 }) => {
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-zinc-50 dark:border-gray-600 dark:bg-zinc-950 px-4 sm:px-6 rounded-md">
@@ -53,19 +56,28 @@ const Header: React.FC<HeaderProps> = ({
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+      ) : isLoading ? (
+        <Skeleton className="h-4 w-[50px]" />
       ) : (
         <BreadcrumbItem>
           <BreadcrumbPage>{page}</BreadcrumbPage>
         </BreadcrumbItem>
       )}
-      <div className="flex gap-1">
-        <ModeToggle />
-        <SortDropdown
-          sortOption={sortOption}
-          handleSortChange={handleSortChange}
-          sortOrder={sortOrder}
-        />
-      </div>
+      {isLoading ? (
+        <div className="flex gap-1">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+      ) : (
+        <div className="flex gap-1">
+          <ModeToggle />
+          <SortDropdown
+            sortOption={sortOption}
+            handleSortChange={handleSortChange}
+            sortOrder={sortOrder}
+          />
+        </div>
+      )}
     </header>
   );
 };
