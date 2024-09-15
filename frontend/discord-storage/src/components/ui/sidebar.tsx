@@ -6,14 +6,19 @@ import {
 } from "@phosphor-icons/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import NewFolderDialogContent from "./dialogs/new-folder-dialog";
 import { useState } from "react";
+import {
+  UploadFileDialogConent,
+  NewFolderDialogContent,
+} from "@/components/ui/dialogs";
+import { Folder } from "@/interfaces";
 
 type SidebarProps = {
+  folders: Folder[];
   isLoading: boolean;
 };
 
-const Sidebar = ({ isLoading }: SidebarProps) => {
+const Sidebar = ({ folders, isLoading }: SidebarProps) => {
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
   return (
@@ -37,21 +42,28 @@ const Sidebar = ({ isLoading }: SidebarProps) => {
                 New Folder
               </Button>
             </DialogTrigger>
-
             <NewFolderDialogContent setDialogOpen={setDialogOpen} />
           </Dialog>
         )}
         {isLoading ? (
           <Skeleton className="h-8 w-[225px]" />
         ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="justify-start gap-2 text-left dark:text-white"
-          >
-            <UploadSimple size={16} weight="bold" />
-            Upload File
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="justify-start gap-2 text-left dark:text-white"
+              >
+                <UploadSimple size={16} weight="bold" />
+                Upload File
+              </Button>
+            </DialogTrigger>
+            <UploadFileDialogConent
+              folders={folders}
+              setDialogOpen={setDialogOpen}
+            />
+          </Dialog>
         )}
       </nav>
     </aside>

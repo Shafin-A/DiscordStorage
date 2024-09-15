@@ -159,7 +159,7 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-muted/40 dark:bg-zinc-800">
-      <Sidebar isLoading={isPending} />
+      <Sidebar folders={sortedFolders} isLoading={isPending} />
       <div className="flex-1 p-4 sm:p-6">
         <Header
           breadcrumbs={
