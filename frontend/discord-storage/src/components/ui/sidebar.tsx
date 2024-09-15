@@ -19,7 +19,8 @@ type SidebarProps = {
 };
 
 const Sidebar = ({ folders, isLoading }: SidebarProps) => {
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [folderDialogOpen, setFolderDialogOpen] = useState<boolean>(false);
+  const [fileDialogOpen, setFileDialogOpen] = useState<boolean>(false);
 
   return (
     <aside className="hidden w-64 flex-col border-r dark:border-gray-600 bg-background dark:bg-zinc-950 p-4 sm:flex">
@@ -31,7 +32,7 @@ const Sidebar = ({ folders, isLoading }: SidebarProps) => {
         {isLoading ? (
           <Skeleton className="h-8 w-[225px]" />
         ) : (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
@@ -42,13 +43,13 @@ const Sidebar = ({ folders, isLoading }: SidebarProps) => {
                 New Folder
               </Button>
             </DialogTrigger>
-            <NewFolderDialogContent setDialogOpen={setDialogOpen} />
+            <NewFolderDialogContent setDialogOpen={setFolderDialogOpen} />
           </Dialog>
         )}
         {isLoading ? (
           <Skeleton className="h-8 w-[225px]" />
         ) : (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
@@ -61,7 +62,7 @@ const Sidebar = ({ folders, isLoading }: SidebarProps) => {
             </DialogTrigger>
             <UploadFileDialogConent
               folders={folders}
-              setDialogOpen={setDialogOpen}
+              setDialogOpen={setFileDialogOpen}
             />
           </Dialog>
         )}
