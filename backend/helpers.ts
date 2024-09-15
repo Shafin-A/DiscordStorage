@@ -175,7 +175,8 @@ export const createThreadAndSendChunks = async (
   fileName: string,
   fileSize: number,
   chunks: Buffer[],
-  preview: Buffer | null
+  preview: Buffer | null,
+  wss: Server<typeof WebSocket, typeof IncomingMessage>
 ) => {
   const thread = await channel.threads.create({
     name: threadName,
@@ -208,6 +209,19 @@ export const createThreadAndSendChunks = async (
               : `${fileName} Part ${i + 1}.txt`,
         },
       ],
+    });
+
+    // Send WebSocket updates for each chunk
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            type: "uploadProgress",
+            chunkIndex: i + 1,
+            totalChunks: chunks.length,
+          })
+        );
+      }
     });
 
     console.log(`Chunk ${i + 1}/${chunks.length} uploaded.`);

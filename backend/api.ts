@@ -440,7 +440,8 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
         req.file.originalname,
         fileSize,
         chunks,
-        previewBuffer
+        previewBuffer,
+        wss
       );
 
       return res.json({
@@ -456,7 +457,8 @@ app.post("/upload/:folderID", upload.single("file"), async (req, res) => {
         req.file.originalname,
         fileSize,
         [fileBuffer],
-        previewBuffer
+        previewBuffer,
+        wss
       );
 
       res.json({
