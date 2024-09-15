@@ -3,47 +3,16 @@ import Header from "@/components/ui/header";
 import { useQuery } from "@tanstack/react-query";
 import { sortItems } from "@/lib/utils";
 import { Folder, File, SortOptions } from "@/interfaces";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FolderCard, FileCard } from "@/components/ui/cards";
 import { Toaster } from "@/components/ui/sonner";
+import useWebSocket from "@/lib/useWebSocket";
 
 const App = () => {
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [progress, setProgress] = useState<{ [key: string]: number }>({});
 
   const [sortOption, setSortOption] = useState<SortOptions>("Name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-
-  useEffect(() => {
-    const socket = new WebSocket("ws://localhost:3000");
-    socket.addEventListener("message", (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "progressOutsideLimit") {
-        const { bufferIndex, totalBuffers } = data;
-        // Buffer progress is 50% of the total progress
-        const bufferProgress = (bufferIndex / totalBuffers) * 50;
-        setProgress((prevProgress) => ({
-          ...prevProgress,
-          [data.fileID]: Math.max(
-            prevProgress[data.fileID] || 0,
-            bufferProgress
-          ),
-        }));
-      }
-      if (data.type === "progressWithinLimit") {
-        const { progress } = data;
-        setProgress((prevProgress) => ({
-          ...prevProgress,
-          [data.fileID]: Math.max(prevProgress[data.fileID] || 0, progress),
-        }));
-      }
-    });
-
-    return () => {
-      socket.close();
-    };
-  }, []);
 
   const { isPending, error, data } = useQuery({
     queryKey: ["foldersData"],
@@ -52,6 +21,8 @@ const App = () => {
       return (await response.json()) as Folder[];
     },
   });
+
+  const { progress, setProgress } = useWebSocket("ws://localhost:3000");
 
   if (error) return "An error has occurred: " + error.message;
 
