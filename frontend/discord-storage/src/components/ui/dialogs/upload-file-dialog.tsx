@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useWebSocket from "@/lib/useWebSocket";
+import { Progress } from "../progress";
 
 type UploadFileDialogContentProps = {
   folders: Folder[];
@@ -32,6 +34,10 @@ const UploadFileDialogContent: React.FC<UploadFileDialogContentProps> = ({
 }) => {
   const [selectedFolderID, setSelectedFolderID] = useState<string>("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  const { uploadProgress, setUploadProgress } = useWebSocket(
+    "ws://localhost:3000"
+  );
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -69,10 +75,14 @@ const UploadFileDialogContent: React.FC<UploadFileDialogContentProps> = ({
     mutationFn: uploadFile,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["foldersData"] });
-      setDialogOpen(false);
-      toast.success("Folder has been successfully uploaded!");
       setSelectedFolderID("");
       setUploadedFile(null);
+      setTimeout(() => {
+        // Looks/feels better with some delay
+        setUploadProgress(0);
+        setDialogOpen(false);
+        toast.success("Folder has been successfully uploaded!");
+      }, 500);
     },
     onError: (error: Error) => {
       toast.error(error.message, { duration: Infinity });
@@ -107,7 +117,8 @@ const UploadFileDialogContent: React.FC<UploadFileDialogContentProps> = ({
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Input className="mt-4" type="file" onChange={handleFileChange} />
+        <Input className="mt-4 mb-4" type="file" onChange={handleFileChange} />
+        {mutation.isPending && <Progress value={uploadProgress} />}
       </div>
       <DialogFooter>
         <Button
