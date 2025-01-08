@@ -3,6 +3,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "cors": "^2.8.5",
     "discord.js": "^14.15.3",
+    "discordstorage": "file:",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "fluent-ffmpeg": "^2.1.3",
